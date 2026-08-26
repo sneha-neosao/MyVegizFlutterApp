@@ -195,35 +195,38 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                                       },
                                       itemBuilder: (context, index) {
                                         final currentImg = imageList[index];
-                                        return (currentImg.startsWith('http'))
-                                            ? Image.network(
-                                                currentImg,
-                                                width: double.infinity,
-                                                height: double.infinity,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) => Container(
-                                                  color: Colors.white,
-                                                  child: Icon(
-                                                    Icons.eco_rounded,
-                                                    color: Colors.green.shade300,
-                                                    size: 32.w,
+                                        return Padding(
+                                          padding: EdgeInsets.all(6.w),
+                                          child: (currentImg.startsWith('http'))
+                                              ? Image.network(
+                                                  currentImg,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (context, error, stackTrace) => Container(
+                                                    color: Colors.white,
+                                                    child: Icon(
+                                                      Icons.eco_rounded,
+                                                      color: Colors.green.shade300,
+                                                      size: 32.w,
+                                                    ),
+                                                  ),
+                                                )
+                                              : Image.network(
+                                                  NetworkImages.mapAssetToNetwork(currentImg),
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (context, error, stackTrace) => Container(
+                                                    color: Colors.white,
+                                                    child: Icon(
+                                                      Icons.eco_rounded,
+                                                      color: Colors.green.shade300,
+                                                      size: 32.w,
+                                                    ),
                                                   ),
                                                 ),
-                                              )
-                                            : Image.network(
-                                                NetworkImages.mapAssetToNetwork(currentImg),
-                                                width: double.infinity,
-                                                height: double.infinity,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) => Container(
-                                                  color: Colors.white,
-                                                  child: Icon(
-                                                    Icons.eco_rounded,
-                                                    color: Colors.green.shade300,
-                                                    size: 32.w,
-                                                  ),
-                                                ),
-                                              );
+                                        );
                                       },
                                     )
                                   : Container(
@@ -353,10 +356,10 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                       ),
                     ),
 
-                    // Integrated Blueish Weight & Action Bar Container
+                    // Integrated Faint Green Weight & Action Bar Container
                     Container(
                       height: 40.h,
-                      color: const Color(0xFFF0F5FA),
+                      color: const Color(0xFFF0F7F4),
                       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                       child: BlocConsumer<CartBloc, CartState>(
                         listener: (context, state) {
@@ -780,7 +783,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                   color: const Color(0xFFE8F5E9),
                   child: Center(
                     child: Text(
-                      '${widget.variants.length} options',
+                      '${widget.variants.length} Options',
                       style: TextStyle(
                         color: const Color(0xFF2E7D32),
                         fontSize: 7.5.sp,

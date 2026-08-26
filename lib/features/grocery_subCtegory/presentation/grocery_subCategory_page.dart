@@ -331,9 +331,9 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.59,
-          crossAxisSpacing: 6,
-          mainAxisSpacing: 6,
+          childAspectRatio: 0.57,
+          crossAxisSpacing: 11,
+          mainAxisSpacing: 8,
         ),
         delegate: SliverChildBuilderDelegate((context, index) {
           final product = products[index];
@@ -944,12 +944,12 @@ class _GrocerySubCategoryProductsPageState
     }
 
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(4.w, 4.h, 6.w, 90.h),
+      padding: EdgeInsets.fromLTRB(5.w, 4.h, 5.w, 90.h),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.59,
-        crossAxisSpacing: 5.w,
-        mainAxisSpacing: 6.h,
+        childAspectRatio: 0.57,
+        crossAxisSpacing: 11.w,
+        mainAxisSpacing: 8.h,
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
