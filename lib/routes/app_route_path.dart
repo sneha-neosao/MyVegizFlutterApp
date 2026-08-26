@@ -1,0 +1,34 @@
+class AppRoutePath {
+  static const String home = '/';
+  static const String search = '/search';
+  static const String regiVerifyOtp = '/regi-verify-otp';
+  static const String restaurantDetails = '/restaurant-details';
+  static const String cart = '/cart';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String profile = '/profile';
+  static const String foodCategory = '/food-category';
+  static const String groceryCategory = '/grocery-category';
+  static const String grocerySubCategory = '/grocery-sub-category';
+  static const String hotDeals = '/hot-deals';
+  static const String address = '/address';
+  static const String mapLocation = '/map-location';
+  static const String locationDetails = '/location-details';
+  static const String selectLocation = '/select-location';
+  static const String otp = '/otp';
+  static const String productDetails = '/product-details';
+  static const String success = '/success';
+  static const String orderTracking = '/order-tracking';
+  static const String ordersList = '/orders-list';
+  static const String orderDetails = '/order-details';
+  static const String wishlist = '/wishlist';
+  static const String ratingScreen = '/rating';
+  static const String orderHistory = '/order-history';
+  static const String wallet = '/wallet';
+  static const String entityCategoryVendors = '/entity-category-vendors';
+  static const String recommendedFoodsList = '/recommended-foods-list';
+  static const splash = "/splash";
+  static const String privacyAndSecurity = '/privacy-and-security';
+  static const String refundPolicy = '/refund-policy';
+  static const String termsAndConditions = '/terms-and-conditions';
+}

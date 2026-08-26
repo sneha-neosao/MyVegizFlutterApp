@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "89469709535",
+    "project_id": "nsdelivery-789ca",
+    "storage_bucket": "nsdelivery-789ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89469709535:android:137c898c916df2082d4d6a",
+        "android_client_info": {
+          "package_name": "com.nsdelivery.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsf3gkQQmpPPtnD0umCeYmG48a-lVfg3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89469709535:android:81ba663a37c204632d4d6a",
+        "android_client_info": {
+          "package_name": "com.nsdelivery.deliveryboy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsf3gkQQmpPPtnD0umCeYmG48a-lVfg3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
