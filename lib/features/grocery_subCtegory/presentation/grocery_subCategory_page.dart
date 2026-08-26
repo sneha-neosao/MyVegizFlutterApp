@@ -640,6 +640,7 @@ class _GrocerySubCategoryProductsPageState
                 color: isSelected ? const Color(0xFFF0F7F4) : Colors.transparent,
               ),
               child: Stack(
+                alignment: Alignment.center,
                 children: [
                   if (isSelected)
                     Positioned(
@@ -657,40 +658,51 @@ class _GrocerySubCategoryProductsPageState
                         ),
                       ),
                     ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 5.w,
-                      vertical: 8.h,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 46.w,
-                          height: 46.w,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(
-                              color: isSelected ? const Color(0xFF03B875) : Colors.white,
-                              width: isSelected ? 1.5 : 2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isSelected ? 0.04 : 0.08),
-                                blurRadius: isSelected ? 4 : 6,
-                                offset: const Offset(0, 2),
+                  Positioned.fill(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 5.w,
+                        vertical: 8.h,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 46.w,
+                            height: 46.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF03B875) : Colors.white,
+                                width: isSelected ? 1.5 : 2,
                               ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: (image != null && image.isNotEmpty)
-                                ? Image.network(
-                                    image,
-                                    width: 46.w,
-                                    height: 46.w,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isSelected ? 0.04 : 0.08),
+                                  blurRadius: isSelected ? 4 : 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: (image != null && image.isNotEmpty)
+                                  ? Image.network(
+                                      image,
+                                      width: 46.w,
+                                      height: 46.w,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: Colors.white,
+                                        child: Icon(
+                                          Icons.category_outlined,
+                                          size: 20.w,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
                                       color: Colors.white,
                                       child: Icon(
                                         Icons.category_outlined,
@@ -698,35 +710,27 @@ class _GrocerySubCategoryProductsPageState
                                         color: Colors.grey.shade400,
                                       ),
                                     ),
-                                  )
-                                : Container(
-                                    color: Colors.white,
-                                    child: Icon(
-                                      Icons.category_outlined,
-                                      size: 20.w,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                  ),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 6.h),
-                        Text(
-                          sub.label ?? '',
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 9.5.sp,
-                            fontWeight: isSelected
-                                ? FontWeight.w800
-                                : FontWeight.w500,
-                            color: isSelected
-                                ? const Color(0xFF028A58)
-                                : const Color(0xFF5A6F82),
-                            height: 1.1,
+                          SizedBox(height: 6.h),
+                          Text(
+                            sub.label ?? '',
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 9.5.sp,
+                              fontWeight: isSelected
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFF028A58)
+                                  : const Color(0xFF5A6F82),
+                              height: 1.1,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],

@@ -355,9 +355,9 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
 
                     // Integrated Blueish Weight & Action Bar Container
                     Container(
-                      height: 42.h,
+                      height: 40.h,
                       color: const Color(0xFFF0F5FA),
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                       child: BlocConsumer<CartBloc, CartState>(
                         listener: (context, state) {
                           if (state is CartActionSuccess || state is CartError || state is CartLoaded) {
@@ -458,7 +458,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
 
             // ── Product Details Section (Plain background) ──
             Padding(
-              padding: EdgeInsets.fromLTRB(4.w, 8.h, 4.w, 4.h),
+              padding: EdgeInsets.fromLTRB(4.w, 4.h, 4.w, 2.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
