@@ -515,7 +515,7 @@ class _GrocerySubCategoryProductsPageState
                             color: Colors.white,
                             child: Column(
                               children: [
-                                _buildFilterBar(state),
+                                // _buildFilterBar(state),
                                 Expanded(child: _buildProductContent(state)),
                               ],
                             ),
