@@ -363,6 +363,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
             variants: product.variants ?? [],
             isWishlisted: product.isWishlisted ?? false,
             productCartQuantity: product.cartQuantity ?? 0,
+            tags: product.tags,
           );
         }, childCount: products.length),
       ),
@@ -989,6 +990,7 @@ class _GrocerySubCategoryProductsPageState
                   })
               .toList(),
           siblingIndex: index,
+          tags: product.tags,
         );
       },
     );
@@ -1005,14 +1007,43 @@ class _GrocerySubCategoryProductsPageState
             color: Colors.grey.shade300,
           ),
           const SizedBox(height: 16),
-          Text(
-            widget.searchQuery.isNotEmpty
-                ? 'No products matching your search'
-                : 'No products in this sub-category',
+          const Text(
+            'No data found',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: Colors.grey,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              if (widget.category.slug != null) {
+                final loc = locationService.locationNotifier.value;
+                context.read<CategoryProductsBloc>().add(
+                  FetchProductsAndFiltersEvent(
+                    categorySlug: widget.category.slug!,
+                    lat: loc?.lat ?? 0.0,
+                    lng: loc?.lng ?? 0.0,
+                    resetFilters: false,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFC8019),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+            ),
+            child: const Text(
+              'Retry',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

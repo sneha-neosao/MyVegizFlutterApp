@@ -16,6 +16,7 @@ class ApiUrl {
   // static String networkChecker = 'https://web.neosao.co.in';
 
   // static String baseUrl = 'http://192.168.1.28:8001/api/v1';
+  // static String networkChecker = 'http://192.168.1.17:8001';
 
   static Future<void> initBaseUrl() async {
     try {} catch (e) {

@@ -17,6 +17,7 @@ import '../../../core/utils/network_images.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../routes/app_route_path.dart';
+import '../../grocery_subCtegory/data/models/homePage_model.dart';
 
 class GroceryProductCard extends StatefulWidget {
   final String image;
@@ -42,6 +43,8 @@ class GroceryProductCard extends StatefulWidget {
   final bool? isDeliverable;
   final List<dynamic>? siblingProducts;
   final int? siblingIndex;
+  /// Product tags to display at top-left corner of the image
+  final List<ProductTagModel>? tags;
 
   const GroceryProductCard({
     super.key,
@@ -65,6 +68,7 @@ class GroceryProductCard extends StatefulWidget {
     this.isDeliverable,
     this.siblingProducts,
     this.siblingIndex,
+    this.tags,
   });
 
   @override
@@ -260,6 +264,21 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                                       ),
                                     );
                                   }),
+                                ),
+                              ),
+
+                            // ── Product Tag Badges — Top Left ──
+                            if (widget.tags != null && widget.tags!.isNotEmpty)
+                              Positioned(
+                                top: 6.h,
+                                left: 0,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: widget.tags!
+                                      .take(2)
+                                      .map((tag) => _buildTagBadge(tag))
+                                      .toList(),
                                 ),
                               ),
 
@@ -548,6 +567,107 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
       ),
     );
   }
+
+  /// Parses a hex color string like "#e11447" or "e11447" into a [Color].
+  Color _parseHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFF4CAF50);
+    final cleaned = hex.replaceAll('#', '').trim();
+    if (cleaned.length == 6) {
+      return Color(int.parse('FF$cleaned', radix: 16));
+    } else if (cleaned.length == 8) {
+      return Color(int.parse(cleaned, radix: 16));
+    }
+    return const Color(0xFF4CAF50);
+  }
+
+  Widget _buildTagBadge(ProductTagModel tag) {
+    final baseColor = _parseHexColor(tag.colorCode);
+    final label = tag.tagName ?? '';
+    if (label.isEmpty) return const SizedBox.shrink();
+
+    // Derive glossy gradient stops from the base color
+    final glossTop = Color.fromARGB(
+      255,
+      (_clamp(baseColor.r * 255 + 80)).toInt(),
+      (_clamp(baseColor.g * 255 + 60)).toInt(),
+      (_clamp(baseColor.b * 255 + 50)).toInt(),
+    );
+    final glossBottom = Color.fromARGB(
+      255,
+      (_clamp(baseColor.r * 255 - 30)).toInt(),
+      (_clamp(baseColor.g * 255 - 25)).toInt(),
+      (_clamp(baseColor.b * 255 - 20)).toInt(),
+    );
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 3.h),
+      child: ClipPath(
+        clipper: _FlagClipper(),
+        child: Stack(
+          children: [
+            // Base glossy gradient
+            Container(
+              padding: EdgeInsets.only(
+                left: 8.w,
+                right: 14.w,
+                top: 3.h,
+                bottom: 3.h,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [glossTop, baseColor, glossBottom],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.55, 1.0],
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8.5.sp,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  letterSpacing: 0.2,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // White gloss sheen overlay (top-half shimmer strip)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.45,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.30),
+                          Colors.white.withValues(alpha: 0.0),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Clamps a double value between 0 and 255.
+  double _clamp(double v) => v.clamp(0, 255);
 
   Widget _buildActionButton({
     required BuildContext context,
@@ -1396,4 +1516,23 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
       ),
     );
   }
+}
+
+/// Clips a rectangle into a flag/ribbon shape with a V-notch cut into the right end.
+class _FlagClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final notchDepth = size.height / 2; // depth of the V-notch
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width - notchDepth, 0)
+      ..lineTo(size.width, size.height / 2)       // point of the V
+      ..lineTo(size.width - notchDepth, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(_FlagClipper oldClipper) => false;
 }

@@ -238,14 +238,18 @@ class ProductTagModel {
   final int? id;
   final String? uuId;
   final String? tagName;
+  final String? slug;
+  final String? colorCode;
 
-  ProductTagModel({this.id, this.uuId, this.tagName});
+  ProductTagModel({this.id, this.uuId, this.tagName, this.slug, this.colorCode});
 
   factory ProductTagModel.fromJson(Map<String, dynamic> json) {
     return ProductTagModel(
       id: json['id'],
       uuId: json['uu_id'],
       tagName: json['tag_name'],
+      slug: json['slug'],
+      colorCode: json['color_code'],
     );
   }
 }
@@ -353,8 +357,8 @@ class ProductModel {
           ? (json['images'] as List).map((v) => ImageModel.fromJson(v)).toList()
           : [],
       rating: json['rating'] != null ? SharedRatingModel.fromJson(json['rating']) : null,
-      tags: json['tags'] != null
-          ? (json['tags'] as List).map((v) => ProductTagModel.fromJson(v)).toList()
+      tags: (json['product_tags'] ?? json['tags']) != null
+          ? ((json['product_tags'] ?? json['tags']) as List).map((v) => ProductTagModel.fromJson(v)).toList()
           : [],
       productViews: (json['product_views'] as num?)?.toInt() ?? (json['views'] as num?)?.toInt() ?? 0,
     );
@@ -386,8 +390,15 @@ class CategoryProductsResponse {
   final String? message;
   final CategoryModel? data;
   final List<ProductModel>? products;
+  final CategoryProductsPagination? pagination;
 
-  CategoryProductsResponse({this.status, this.message, this.data, this.products});
+  CategoryProductsResponse({
+    this.status,
+    this.message,
+    this.data,
+    this.products,
+    this.pagination,
+  });
 
   factory CategoryProductsResponse.fromJson(Map<String, dynamic> json) {
     CategoryModel? parsedData;
@@ -410,6 +421,32 @@ class CategoryProductsResponse {
       message: json['message'],
       data: parsedData,
       products: parsedProducts,
+      pagination: json['pagination'] != null
+          ? CategoryProductsPagination.fromJson(json['pagination'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class CategoryProductsPagination {
+  final int? total;
+  final int? perPage;
+  final int? currentPage;
+  final int? totalPages;
+
+  CategoryProductsPagination({
+    this.total,
+    this.perPage,
+    this.currentPage,
+    this.totalPages,
+  });
+
+  factory CategoryProductsPagination.fromJson(Map<String, dynamic> json) {
+    return CategoryProductsPagination(
+      total: json['total'] as int?,
+      perPage: json['per_page'] as int?,
+      currentPage: json['current_page'] as int?,
+      totalPages: json['total_pages'] as int?,
     );
   }
 }

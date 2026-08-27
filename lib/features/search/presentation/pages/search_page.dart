@@ -216,6 +216,7 @@ class _SearchPageState extends State<SearchPage> {
           isWishlisted: product.isWishlisted ?? false,
           isDeliverable: product.isDeliverable,
           productCartQuantity: product.cartQuantity ?? 0,
+          tags: product.tags,
         );
       },
     );
