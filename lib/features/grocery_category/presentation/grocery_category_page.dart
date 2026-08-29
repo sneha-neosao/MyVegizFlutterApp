@@ -9,10 +9,14 @@ import 'package:my_vegiz_flutter/widgets/shimmer_placeholder.dart';
 import '../../../widgets/custom_app_bar.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../routes/app_route_path.dart';
+import '../../../config/injector_conf.dart';
 import '../../grocery_subCtegory/presentation/grocery_subCategory_page.dart';
+import '../../grocery_subCtegory/widgets/grocery_banner_slider.dart';
 import '../../grocery_subCtegory/bloc/homePage/homePage_bloc.dart';
 import '../../grocery_subCtegory/bloc/homePage/homePage_event.dart';
 import '../../grocery_subCtegory/bloc/homePage/homePage_state.dart';
+import '../../grocery_subCtegory/bloc/categoryProducts/category_products_bloc.dart';
+import '../../grocery_subCtegory/bloc/categoryProducts/category_products_event.dart';
 import '../../mainCetegories/bloc/mainCategories_bloc.dart';
 import '../../mainCetegories/bloc/mainCategories_event.dart';
 import '../../../core/utils/responsive_utils.dart';
@@ -51,7 +55,9 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
     final lat = loc?.lat ?? 0.0;
     final lng = loc?.lng ?? 0.0;
     
-    final targetTabSlug = (widget.initialTabSlug != null && widget.initialTabSlug!.isNotEmpty)
+    final targetTabSlug = (!widget.isHomeTab &&
+            widget.initialTabSlug != null &&
+            widget.initialTabSlug!.isNotEmpty)
         ? widget.initialTabSlug
         : null;
 
@@ -111,136 +117,145 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
               return _buildGroceryShimmer();
             }
 
-            // Take at most 2 tabs as requested
-            final List<HomeTabModel> tabs = rawTabs.take(2).toList();
+            // Take at most 2 category cards for the header
+            final List<HomeTabModel> cards = rawTabs.take(2).toList();
 
-            int initialIndex = 0;
-            if (widget.initialTabSlug != null) {
-              final idx = tabs.indexWhere(
-                (t) => t.slug == widget.initialTabSlug,
-              );
-              if (idx != -1) {
-                initialIndex = idx;
+            // Extract top banners
+            final banners = <BannerModel>[];
+            for (var tab in rawTabs) {
+              if (tab.homeSections != null) {
+                for (var section in tab.homeSections!) {
+                  if (section.sectionType == 'banner' &&
+                      section.banners != null &&
+                      section.banners!.isNotEmpty) {
+                    banners.addAll(section.banners!);
+                  }
+                }
               }
             }
 
-            return DefaultTabController(
-              length: tabs.length,
-              initialIndex: initialIndex,
-              child: Builder(
-                builder: (context) {
-                  final tabController = DefaultTabController.of(context);
+            // Combine non-banner sections for below the cards
+            final allSections = <HomeSectionModel>[];
+            final seenSlugs = <String>{};
+            for (var tab in rawTabs) {
+              if (tab.homeSections != null) {
+                for (var section in tab.homeSections!) {
+                  if (section.sectionType != 'banner' &&
+                      (section.slug == null ||
+                          !seenSlugs.contains(section.slug))) {
+                    allSections.add(section);
+                    if (section.slug != null) seenSlugs.add(section.slug!);
+                  }
+                }
+              }
+            }
+            final allTabData = HomeTabModel(
+              id: -1,
+              tabName: 'All',
+              slug: '',
+              homeSections: allSections,
+            );
 
-                  final scaffold = Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFFFFC59E), // Slightly deeper warm orange right at the top
-                          Color(0xFFFFE3D1), // Soft transition
-                          Color(0xFFFFF4EC), // Very faint orange
-                          Colors.white,      // Finished into white in compact space
-                        ],
-                        stops: [0.0, 0.08, 0.18, 0.32],
+            final scaffold = Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFC59E), // Slightly deeper warm orange right at the top
+                    Color(0xFFFFE3D1), // Soft transition
+                    Color(0xFFFFF4EC), // Very faint orange
+                    Colors.white,      // Finished into white in compact space
+                  ],
+                  stops: [0.0, 0.08, 0.18, 0.32],
+                ),
+              ),
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: CustomHomeAppBar(
+                  showSearch: false,
+                  showFoodFilters: false,
+                  activeFilter: _activeFilter,
+                  onFilterTap: () {
+                    showFoodFilterBottomSheet(context, _activeFilter, (
+                      newFilter,
+                    ) {
+                      setState(() {
+                        _activeFilter = newFilter;
+                      });
+                    });
+                  },
+                ),
+                body: Column(
+                  children: [
+                    // 1. Banners UP (at the top)
+                    if (banners.isNotEmpty && _searchQuery.isEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 4.h, bottom: 6.h),
+                        child: GroceryBannerSlider(banners: banners),
                       ),
-                    ),
-                    child: Scaffold(
-                      backgroundColor: Colors.transparent,
-                      appBar: CustomHomeAppBar(
-                        showSearch: false,
-                        showFoodFilters: false,
-                        activeFilter: _activeFilter,
-                        onFilterTap: () {
-                          showFoodFilterBottomSheet(context, _activeFilter, (
-                            newFilter,
-                          ) {
-                            setState(() {
-                              _activeFilter = newFilter;
-                            });
-                          });
-                        },
-                      ),
-                      body: Column(
-                        children: [
-                          // Cards in Column (max 2 categories)
-                          if (tabs.isNotEmpty)
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16.w,
-                                vertical: 8.h,
-                              ),
-                              child: AnimatedBuilder(
-                                animation: tabController,
-                                builder: (context, _) {
-                                  return Column(
-                                    children: [
-                                      for (int i = 0; i < tabs.length; i++) ...[
-                                        if (i > 0) SizedBox(height: 10.h),
-                                        _buildCategoryCard(
-                                          tab: tabs[i],
-                                          index: i,
-                                          isSelected: tabController.index == i,
-                                          onTap: () {
-                                            tabController.animateTo(i);
-                                            logger.d(
-                                              '🥦 GroceryCategoryPage: Card selected "${tabs[i].tabName}" (slug="${tabs[i].slug}")',
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ],
+
+                    // 2. Both Category Cards BELOW the banners
+                    if (cards.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 6.h,
+                        ),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < cards.length; i++) ...[
+                              if (i > 0) SizedBox(height: 10.h),
+                              _buildCategoryCard(
+                                tab: cards[i],
+                                index: i,
+                                onTap: () {
+                                  logger.d(
+                                    '🥦 GroceryCategoryPage: Tapped category card "${cards[i].tabName}" (slug="${cards[i].slug}") -> Opening products page',
                                   );
+                                  _navigateToProductsPage(cards[i]);
                                 },
                               ),
-                            ),
-
-                          // SubCategory content
-                          Expanded(
-                            child: TabBarView(
-                              controller: tabController,
-                              children: tabs.map((tab) {
-                                return GrocerySubCategoryPage(
-                                  tabData: tab,
-                                  onRefresh: _onRefresh,
-                                  searchQuery: _searchQuery,
-                                  activeFilter: _activeFilter,
-                                  initialCategorySlug:
-                                      tab.slug == widget.initialTabSlug
-                                          ? widget.initialCategorySlug
-                                          : null,
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
+                            ],
+                          ],
+                        ),
                       ),
-                      bottomNavigationBar: widget.isHomeTab
-                          ? const CustomBottomNavBar(currentIndex: 0)
-                          : null,
+
+                    // 3. All home sections content below the cards
+                    Expanded(
+                      child: GrocerySubCategoryPage(
+                        tabData: allTabData,
+                        onRefresh: _onRefresh,
+                        searchQuery: _searchQuery,
+                        activeFilter: _activeFilter,
+                        initialCategorySlug: widget.initialCategorySlug,
+                      ),
                     ),
-                  );
-
-                  if (widget.isHomeTab) {
-                    return PopScope(
-                      canPop: false,
-                      onPopInvokedWithResult: (didPop, result) {
-                        if (didPop) return;
-                        if (widget.fromCart) {
-                          context.go(AppRoutePath.cart, extra: widget.isFood);
-                        } else {
-                          SystemNavigator.pop();
-                        }
-                      },
-                      child: scaffold,
-                    );
-                  }
-
-                  return scaffold;
-                },
+                  ],
+                ),
+                bottomNavigationBar: widget.isHomeTab
+                    ? const CustomBottomNavBar(currentIndex: 0)
+                    : null,
               ),
             );
+
+            if (widget.isHomeTab) {
+              return PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, result) {
+                  if (didPop) return;
+                  if (widget.fromCart) {
+                    context.go(AppRoutePath.cart, extra: widget.isFood);
+                  } else {
+                    SystemNavigator.pop();
+                  }
+                },
+                child: scaffold,
+              );
+            }
+
+            return scaffold;
           }
 
           return const SizedBox();
@@ -249,34 +264,70 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
     );
   }
 
+  void _navigateToProductsPage(HomeTabModel card) {
+    final loc = locationService.locationNotifier.value;
+    final lat = loc?.lat ?? 0.0;
+    final lng = loc?.lng ?? 0.0;
+    final categorySlug = card.slug ?? '';
+
+    final catModel = CategoryModel(
+      id: card.id,
+      uuId: card.uuId,
+      categoryName: card.tabName,
+      slug: categorySlug,
+      categoryImage: card.homeIcon,
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MultiBlocProvider(
+          providers: [
+            BlocProvider<CategoryProductsBloc>(
+              create: (context) => getIt<CategoryProductsBloc>()
+                ..add(
+                  FetchProductsAndFiltersEvent(
+                    categorySlug: categorySlug,
+                    subCategoryUuId: null, // empty subcategory uuid
+                    lat: lat,
+                    lng: lng,
+                    resetFilters: true,
+                  ),
+                ),
+            ),
+          ],
+          child: GrocerySubCategoryProductsPage(
+            category: catModel,
+            tabData: card,
+            searchQuery: _searchQuery,
+            activeFilter: _activeFilter,
+            onRefresh: _onRefresh,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoryCard({
     required HomeTabModel tab,
     required int index,
-    required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final List<List<Color>> gradients = [
+    final List<List<Color>> fallbackGradients = [
       [const Color(0xFF26C66D), const Color(0xFF1EA95B)], // Fresh Green
       [const Color(0xFFA8232A), const Color(0xFFDB4C57)], // Apple Red
     ];
-    final cardGradient = gradients[index % gradients.length];
+    final cardGradient = fallbackGradients[index % fallbackGradients.length];
+    final bool hasImage = tab.homeIcon != null && tab.homeIcon!.isNotEmpty;
 
     return Container(
-      height: 96.h,
+      height: 105.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: cardGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: cardGradient.first,
         borderRadius: BorderRadius.circular(18.w),
-        border: isSelected
-            ? Border.all(color: Colors.white, width: 2.2)
-            : Border.all(color: Colors.white.withOpacity(0.3), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: cardGradient.first.withOpacity(isSelected ? 0.35 : 0.18),
-            blurRadius: isSelected ? 10 : 5,
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 6,
             offset: const Offset(0, 4),
           ),
         ],
@@ -286,104 +337,118 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          splashColor: Colors.white.withOpacity(0.2),
+          splashColor: Colors.white.withOpacity(0.25),
           highlightColor: Colors.white.withOpacity(0.1),
           child: Stack(
+            fit: StackFit.expand,
             children: [
+              // Full card background image
+              if (hasImage)
+                Image.network(
+                  tab.homeIcon!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: cardGradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: cardGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+
+              // Gradient overlay to make text and button crisp & readable
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.black.withOpacity(0.72),
+                      Colors.black.withOpacity(0.35),
+                      Colors.black.withOpacity(0.05),
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
+                ),
+              ),
+
+              // Name and Button overlay on top of the image (no selection indicator)
               Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 10.h,
+                  horizontal: 18.w,
+                  vertical: 14.h,
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Left Column: Name & Button
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    Text(
+                      tab.tabName ?? '',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.3,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.6),
+                            offset: const Offset(0, 1.5),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 5.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(20.w),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            tab.tabName ?? '',
+                            "Shop Now",
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.sp,
+                              color: const Color(0xFF1A202C),
+                              fontSize: 11.5.sp,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: -0.3,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 6.h),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 10.w,
-                              vertical: 4.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(
-                                isSelected ? 0.95 : 0.25,
-                              ),
-                              borderRadius: BorderRadius.circular(20.w),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.6),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isSelected ? "Selected" : "Shop Now",
-                                  style: TextStyle(
-                                    color:
-                                        isSelected
-                                            ? cardGradient.last
-                                            : Colors.white,
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(width: 4.w),
-                                Icon(
-                                  isSelected
-                                      ? Icons.check_circle_rounded
-                                      : Icons.arrow_forward_rounded,
-                                  color:
-                                      isSelected
-                                          ? cardGradient.last
-                                          : Colors.white,
-                                  size: 12.w,
-                                ),
-                              ],
-                            ),
+                          SizedBox(width: 4.w),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: const Color(0xFF1A202C),
+                            size: 13.w,
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    // Right Image (displayed directly without circular wrappers)
-                    if (tab.homeIcon != null && tab.homeIcon!.isNotEmpty)
-                      SizedBox(
-                        width: 76.w,
-                        height: 76.h,
-                        child: Image.network(
-                          tab.homeIcon!,
-                          fit: BoxFit.contain,
-                          errorBuilder:
-                              (context, error, stackTrace) => const Icon(
-                                Icons.category,
-                                color: Colors.white,
-                                size: 36,
-                              ),
-                        ),
-                      )
-                    else
-                      Icon(
-                        Icons.eco_rounded,
-                        color: Colors.white,
-                        size: 48.w,
-                      ),
                   ],
                 ),
               ),

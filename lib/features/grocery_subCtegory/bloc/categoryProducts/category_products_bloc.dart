@@ -44,14 +44,13 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
         emit(CategoryProductsError(failure.message));
       },
       (filtersData) async {
-        final subCats = filtersData.data?.subCategories ?? [];
-        final defaultSubUuid = subCats.isNotEmpty ? subCats.first.key : null;
+        final targetSubUuid = event.subCategoryUuId;
 
         final productsResult = await getCategoryProductsUseCase(
           lat: event.lat,
           lng: event.lng,
           categorySlug: event.categorySlug,
-          subCategoryUuId: defaultSubUuid,
+          subCategoryUuId: targetSubUuid,
         );
 
         productsResult.fold(
@@ -63,7 +62,7 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
             emit(CategoryProductsLoaded(
               categoryProductsResponse: productsData,
               categoryFiltersResponse: filtersData,
-              selectedSubCategoryUuId: defaultSubUuid,
+              selectedSubCategoryUuId: targetSubUuid,
               selectedTagUuId: null,
               selectedSortBy: null,
               isProductsLoading: false,

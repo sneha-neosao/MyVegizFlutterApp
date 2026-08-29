@@ -185,7 +185,16 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
           if (section.title != null) {
             slivers.add(_buildSectionHeader(section.title!));
           }
-          slivers.add(_buildProductGrid(filteredProds));
+          final isNewArrival = (section.title ?? '').toLowerCase().contains('arrival') ||
+              (section.slug ?? '').toLowerCase().contains('arrival') ||
+              (section.title ?? '').toLowerCase().contains('new') ||
+              (section.slug ?? '').toLowerCase().contains('new');
+
+          if (isNewArrival) {
+            slivers.add(_buildHorizontalProductList(filteredProds));
+          } else {
+            slivers.add(_buildProductGrid(filteredProds));
+          }
         }
       }
     }
@@ -236,13 +245,13 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
   Widget _buildSectionHeader(String title) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 28, 18, 14),
+        padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 8.h),
         child: Text(
           title,
-          style: const TextStyle(
-            fontSize: 22,
+          style: TextStyle(
+            fontSize: 20.sp,
             fontWeight: FontWeight.w900,
-            letterSpacing: -0.6,
+            letterSpacing: -0.5,
             height: 1.2,
           ),
         ),
@@ -366,6 +375,72 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
             tags: product.tags,
           );
         }, childCount: products.length),
+      ),
+    );
+  }
+
+  Widget _buildHorizontalProductList(List<ProductModel> products) {
+    if (products.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Exactly 3 cards visible per line with comfortable padding and spacing
+          final screenWidth = constraints.maxWidth > 0
+              ? constraints.maxWidth
+              : MediaQuery.of(context).size.width;
+          const double horizontalPadding = 14.0;
+          const double itemSpacing = 8.0;
+          final double cardWidth =
+              (screenWidth - (horizontalPadding * 2) - (itemSpacing * 2)) / 3;
+
+          return SizedBox(
+            height: 242.h,
+            child: ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: products.length,
+              separatorBuilder: (context, index) => SizedBox(width: itemSpacing.w),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                final imagesList = (product.images != null && product.images!.isNotEmpty)
+                    ? product.images!
+                        .map((img) => img.productImage ?? '')
+                        .where((s) => s.isNotEmpty)
+                        .toList()
+                    : (product.productImage != null && product.productImage!.isNotEmpty
+                        ? [product.productImage!]
+                        : <String>[]);
+
+                return SizedBox(
+                  width: cardWidth,
+                  child: GroceryProductCard(
+                    key: ValueKey('h_prod_${product.id}'),
+                    productId: product.id,
+                    image: product.productImage ?? '',
+                    images: imagesList,
+                    title: product.productName ?? 'Product',
+                    rating: product.rating?.avgRating ?? 0.0,
+                    totalReviews: product.rating?.totalReviews ?? 0,
+                    views: product.productViews ?? 0,
+                    price: product.variants?.firstOrNull?.sellingPrice ?? 0.0,
+                    originalPrice: product.variants?.firstOrNull?.actualPrice ?? 0.0,
+                    slug: product.slug ?? '',
+                    variantId: product.variants?.firstOrNull?.id,
+                    cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
+                    variants: product.variants ?? [],
+                    isWishlisted: product.isWishlisted ?? false,
+                    productCartQuantity: product.cartQuantity ?? 0,
+                    tags: product.tags,
+                  ),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
