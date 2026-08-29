@@ -33,97 +33,122 @@ class CustomHomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      titleSpacing: 12,
+      titleSpacing: 14.w,
       automaticallyImplyLeading: false,
       toolbarHeight: 56.h,
       title: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.location_on, color: const Color(0xFFFC8019), size: 24.w),
+          Icon(
+            Icons.location_on_rounded,
+            color: const Color(0xFFFC8019),
+            size: 24.w,
+          ),
           SizedBox(width: 6.w),
           Expanded(
             child: GestureDetector(
               onTap: () {
                 context.push(AppRoutePath.selectLocation);
               },
-              child: ValueListenableBuilder<LocationState?>(
-                valueListenable: locationService.locationNotifier,
-                builder: (context, locationState, child) {
-                  final address = locationState?.address ?? 'Fetching location...';
-                  return Text(
-                    address,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ValueListenableBuilder<LocationState?>(
+                      valueListenable: locationService.locationNotifier,
+                      builder: (context, locationState, child) {
+                        final address =
+                            locationState?.address ?? 'Select location';
+                        return Text(
+                          address,
+                          style: TextStyle(
+                            color: const Color(0xFF1E293B),
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  );
-                },
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: const Color(0xFF1E293B),
+                    size: 20.w,
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
       actions: [
-        Padding(
-          padding: EdgeInsets.only(right: 12.w),
-          child: GestureDetector(
-            onTap: () => context.push(AppRoutePath.profile),
-            child: ValueListenableBuilder<String?>(
-              valueListenable: profileImageNotifier,
-              builder: (context, imagePath, _) {
-                final hasImage = imagePath != null && imagePath.isNotEmpty;
-                return Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: hasImage ? Colors.grey[200] : const Color(0xFFFC8019),
-                    shape: BoxShape.circle,
-                  ),
-                  child: hasImage
-                      ? ClipOval(
-                          child: imagePath.startsWith('http')
-                              ? Image.network(
-                                  imagePath,
-                                  width: 45,
-                                  height: 45,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.person,
-                                    size: 24,
-                                    color: Colors.white,
+        GestureDetector(
+          onTap: () => context.push(AppRoutePath.profile),
+          child: ValueListenableBuilder<String?>(
+            valueListenable: profileImageNotifier,
+            builder: (context, imagePath, _) {
+              final hasImage = imagePath != null && imagePath.isNotEmpty;
+              return Container(
+                width: 38.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child:
+                    hasImage
+                        ? ClipOval(
+                          child:
+                              imagePath.startsWith('http')
+                                  ? Image.network(
+                                    imagePath,
+                                    width: 38.w,
+                                    height: 38.w,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (_, __, ___) => const Icon(
+                                          Icons.person,
+                                          size: 22,
+                                          color: Color(0xFFFC8019),
+                                        ),
+                                  )
+                                  : Image.file(
+                                    File(imagePath),
+                                    width: 38.w,
+                                    height: 38.w,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (_, __, ___) => const Icon(
+                                          Icons.person,
+                                          size: 22,
+                                          color: Color(0xFFFC8019),
+                                        ),
                                   ),
-                                )
-                              : Image.file(
-                                  File(imagePath),
-                                  width: 45,
-                                  height: 45,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.person,
-                                    size: 24,
-                                    color: Colors.white,
-                                  ),
-                                ),
                         )
-                      : const Center(
+                        : const Center(
                           child: Icon(
                             Icons.person,
-                            color: Colors.white,
-                            size: 24,
+                            color: Color(0xFFFC8019),
+                            size: 22,
                           ),
                         ),
-                );
-              },
-            ),
+              );
+            },
           ),
         ),
+        SizedBox(width: 14.w),
       ],
       bottom: (!showSearch && bottom == null)
           ? null
