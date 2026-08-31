@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/logger.dart';
+import '../../data/models/category_filters_model.dart';
 import '../../usecases/get_category_products_usecase.dart';
 import '../../usecases/get_category_filters_usecase.dart';
 import 'category_products_event.dart';
@@ -10,7 +11,9 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
   final GetCategoryFiltersUseCase getCategoryFiltersUseCase;
 
   // Stored state for network calls
+  int? _currentHomeTabId;
   String? _currentCategorySlug;
+  String? _currentSearch;
   double? _currentLat;
   double? _currentLng;
 
@@ -28,49 +31,84 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     FetchProductsAndFiltersEvent event,
     Emitter<CategoryProductsState> emit,
   ) async {
-    // logger.i("📦 CategoryProductsBloc: Fetching products & filters for ${event.categorySlug}");
-    
+    _currentHomeTabId = event.homeTabId;
     _currentCategorySlug = event.categorySlug;
+    _currentSearch = event.search;
     _currentLat = event.lat;
     _currentLng = event.lng;
 
     emit(CategoryProductsLoading());
 
-    final filtersResult = await getCategoryFiltersUseCase(categorySlug: event.categorySlug);
+    final targetSubUuid = event.subCategoryUuId;
 
-    await filtersResult.fold(
-      (failure) async {
-        logger.e("📦 CategoryFilters error: ${failure.message}");
-        emit(CategoryProductsError(failure.message));
-      },
-      (filtersData) async {
-        final targetSubUuid = event.subCategoryUuId;
+    if (event.categorySlug != null && event.categorySlug!.isNotEmpty) {
+      final filtersResult = await getCategoryFiltersUseCase(categorySlug: event.categorySlug!);
 
-        final productsResult = await getCategoryProductsUseCase(
-          lat: event.lat,
-          lng: event.lng,
-          categorySlug: event.categorySlug,
-          subCategoryUuId: targetSubUuid,
-        );
+      await filtersResult.fold(
+        (failure) async {
+          logger.e("📦 CategoryFilters error: ${failure.message}");
+          emit(CategoryProductsError(failure.message));
+        },
+        (filtersData) async {
+          final targetSubUuid = (event.subCategoryUuId != null && event.subCategoryUuId!.isNotEmpty)
+              ? event.subCategoryUuId!
+              : (filtersData.data?.subCategories?.firstOrNull?.key ?? '');
 
-        productsResult.fold(
-          (failure) {
-            logger.e("📦 CategoryProducts error: ${failure.message}");
-            emit(CategoryProductsError(failure.message));
-          },
-          (productsData) {
-            emit(CategoryProductsLoaded(
-              categoryProductsResponse: productsData,
-              categoryFiltersResponse: filtersData,
-              selectedSubCategoryUuId: targetSubUuid,
-              selectedTagUuId: null,
-              selectedSortBy: null,
-              isProductsLoading: false,
-            ));
-          },
-        );
-      },
-    );
+          final productsResult = await getCategoryProductsUseCase(
+            lat: event.lat,
+            lng: event.lng,
+            subCategoryUuId: targetSubUuid,
+            homeTabId: event.homeTabId,
+            categorySlug: event.categorySlug,
+            search: event.search,
+          );
+
+          productsResult.fold(
+            (failure) {
+              logger.e("📦 CategoryProducts error: ${failure.message}");
+              emit(CategoryProductsError(failure.message));
+            },
+            (productsData) {
+              emit(CategoryProductsLoaded(
+                categoryProductsResponse: productsData,
+                categoryFiltersResponse: filtersData,
+                selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+                selectedTagUuId: null,
+                selectedSortBy: null,
+                isProductsLoading: false,
+              ));
+            },
+          );
+        },
+      );
+    } else {
+      final targetSubUuid = event.subCategoryUuId ?? '';
+      final productsResult = await getCategoryProductsUseCase(
+        lat: event.lat,
+        lng: event.lng,
+        subCategoryUuId: targetSubUuid,
+        homeTabId: event.homeTabId,
+        categorySlug: event.categorySlug,
+        search: event.search,
+      );
+
+      productsResult.fold(
+        (failure) {
+          logger.e("📦 CategoryProducts error: ${failure.message}");
+          emit(CategoryProductsError(failure.message));
+        },
+        (productsData) {
+          emit(CategoryProductsLoaded(
+            categoryProductsResponse: productsData,
+            categoryFiltersResponse: CategoryFiltersResponse(status: 200, message: '', data: null),
+            selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+            selectedTagUuId: null,
+            selectedSortBy: null,
+            isProductsLoading: false,
+          ));
+        },
+      );
+    }
   }
 
   void _onFilterSubCategoryChanged(
@@ -131,22 +169,22 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     String? tagUuId,
     String? sortBy,
   }) async {
-    if (_currentCategorySlug == null || _currentLat == null || _currentLng == null) {
+    if (_currentLat == null || _currentLng == null) {
       return;
     }
 
     // Determine the parameters to use, defaulting to the current state value if not provided
-    final String? subId = subCategoryUuId ?? currentState.selectedSubCategoryUuId;
+    final String subId = subCategoryUuId ?? currentState.selectedSubCategoryUuId ?? '';
     final String? tagId = tagUuId ?? currentState.selectedTagUuId;
     final String? sort = sortBy ?? currentState.selectedSortBy;
-
-    // logger.i("📦 CategoryProductsBloc: Fetching products only (subCategory: $subId, tag: $tagId, sort: $sort)");
 
     final result = await getCategoryProductsUseCase(
       lat: _currentLat!,
       lng: _currentLng!,
-      categorySlug: _currentCategorySlug!,
       subCategoryUuId: subId,
+      homeTabId: _currentHomeTabId,
+      categorySlug: _currentCategorySlug,
+      search: _currentSearch,
       tagUuId: tagId,
       sortBy: sort,
     );

@@ -9,10 +9,14 @@ abstract class CategoryProductsRepository {
   Future<Either<Failure, CategoryProductsResponse>> fetchCategoryProducts({
     required double lat,
     required double lng,
-    required String categorySlug,
-    String? subCategoryUuId,
+    required String subCategoryUuId,
+    int? homeTabId,
+    String? categorySlug,
+    String? search,
     String? tagUuId,
     String? sortBy,
+    int? page,
+    int? limit,
   });
 
   Future<Either<Failure, CategoryFiltersResponse>> fetchCategoryFilters({
@@ -29,19 +33,27 @@ class CategoryProductsRepositoryImpl implements CategoryProductsRepository {
   Future<Either<Failure, CategoryProductsResponse>> fetchCategoryProducts({
     required double lat,
     required double lng,
-    required String categorySlug,
-    String? subCategoryUuId,
+    required String subCategoryUuId,
+    int? homeTabId,
+    String? categorySlug,
+    String? search,
     String? tagUuId,
     String? sortBy,
+    int? page,
+    int? limit,
   }) async {
     try {
       final data = await remoteDataSource.fetchCategoryProducts(
         lat: lat,
         lng: lng,
-        categorySlug: categorySlug,
         subCategoryUuId: subCategoryUuId,
+        homeTabId: homeTabId,
+        categorySlug: categorySlug,
+        search: search,
         tagUuId: tagUuId,
         sortBy: sortBy,
+        page: page,
+        limit: limit,
       );
       if (data.status == 200 || data.status == 201) {
         return Right(data);

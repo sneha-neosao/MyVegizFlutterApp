@@ -11,18 +11,26 @@ class GetCategoryProductsUseCase {
   Future<Either<Failure, CategoryProductsResponse>> call({
     required double lat,
     required double lng,
-    required String categorySlug,
-    String? subCategoryUuId,
+    required String subCategoryUuId,
+    int? homeTabId,
+    String? categorySlug,
+    String? search,
     String? tagUuId,
     String? sortBy,
+    int? page,
+    int? limit,
   }) async {
     return await repository.fetchCategoryProducts(
       lat: lat,
       lng: lng,
-      categorySlug: categorySlug,
       subCategoryUuId: subCategoryUuId,
+      homeTabId: homeTabId,
+      categorySlug: categorySlug,
+      search: search,
       tagUuId: tagUuId,
       sortBy: sortBy,
+      page: page,
+      limit: limit,
     );
   }
 }

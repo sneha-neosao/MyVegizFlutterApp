@@ -5,18 +5,11 @@ import '../../utils/logger.dart';
 class ApiUrl {
   const ApiUrl._();
 
-  static String baseUrl = 'https://myvegizapis.neosao.co.in/api/v1';
-  // static String baseUrl = 'https://2z86pz3w-8989.inc1.devtunnels.ms/api/v1';
+  // static String baseUrl = 'https://myvegizapis.neosao.co.in/api/v1';
+  // static String networkChecker = 'https://myvegizapis.neosao.co.in';
 
-  // static String baseUrl = 'https://web.neosao.co.in/api/v1';
-
-  static String networkChecker = 'https://myvegizapis.neosao.co.in';
-  // static String networkChecker = 'https://2z86pz3w-8989.inc1.devtunnels.ms';
-
-  // static String networkChecker = 'https://web.neosao.co.in';
-
-  // static String baseUrl = 'http://192.168.1.28:8001/api/v1';
-  // static String networkChecker = 'http://192.168.1.17:8001';
+  static String baseUrl = 'http://192.168.1.17:8002/api/v1';
+  static String networkChecker = 'http://192.168.1.17:8002';
 
   static Future<void> initBaseUrl() async {
     try {} catch (e) {
@@ -59,18 +52,26 @@ class ApiUrl {
   static String categoryProducts({
     required double lat,
     required double lng,
-    required String categorySlug,
-    String? subCategoryUuId,
+    required String subCategoryUuId,
+    int? homeTabId,
+    String? categorySlug,
+    String? search,
     String? tagUuId,
     String? sortBy,
     int? page,
     int? limit,
   }) {
     String url =
-        "$baseUrl/web/grocery-products/list-with-variants?page=${page ?? 1}&limit=${limit ?? 100}&category_slug=$categorySlug";
+        "$baseUrl/web/grocery-products/list-with-variants?page=${page ?? 1}&limit=${limit ?? 100}&sub_category_uuid=$subCategoryUuId";
 
-    if (subCategoryUuId != null && subCategoryUuId.isNotEmpty) {
-      url += "&sub_category_uuid=$subCategoryUuId";
+    if (homeTabId != null) {
+      url += "&home_tab_id=$homeTabId";
+    }
+    if (categorySlug != null && categorySlug.isNotEmpty) {
+      url += "&category_slug=$categorySlug";
+    }
+    if (search != null && search.isNotEmpty) {
+      url += "&search=${Uri.encodeQueryComponent(search)}";
     }
     if (tagUuId != null && tagUuId.isNotEmpty) {
       url += "&tag_uu_id=$tagUuId";

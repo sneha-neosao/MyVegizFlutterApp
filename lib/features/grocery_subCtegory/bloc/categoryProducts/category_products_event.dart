@@ -1,15 +1,19 @@
 abstract class CategoryProductsEvent {}
 
 class FetchProductsAndFiltersEvent extends CategoryProductsEvent {
-  final String categorySlug;
+  final int? homeTabId;
+  final String? categorySlug;
   final String? subCategoryUuId;
+  final String? search;
   final double lat;
   final double lng;
   final bool resetFilters;
 
   FetchProductsAndFiltersEvent({
-    required this.categorySlug,
+    this.homeTabId,
+    this.categorySlug,
     this.subCategoryUuId,
+    this.search,
     required this.lat,
     required this.lng,
     this.resetFilters = false,

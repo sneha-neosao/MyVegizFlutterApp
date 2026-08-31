@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../config/injector_conf.dart';
 import 'package:my_vegiz_flutter/features/grocery_category/widget/grocery_product_card.dart';
-import 'package:my_vegiz_flutter/features/grocery_subCtegory/data/models/homePage_model.dart';
+import '../data/models/homePage_model.dart';
 import '../bloc/categoryProducts/category_products_bloc.dart';
 import '../bloc/categoryProducts/category_products_event.dart';
 import '../bloc/categoryProducts/category_products_state.dart';
@@ -87,7 +87,8 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
               create: (context) => getIt<CategoryProductsBloc>()
                 ..add(
                   FetchProductsAndFiltersEvent(
-                    categorySlug: cat.slug!,
+                    homeTabId: widget.tabData.id,
+                    categorySlug: cat.slug,
                     lat: lat,
                     lng: lng,
                     resetFilters: true,
@@ -542,7 +543,8 @@ class _GrocerySubCategoryProductsPageState
             final loc = locationService.locationNotifier.value;
             prodBloc.add(
               FetchProductsAndFiltersEvent(
-                categorySlug: widget.category.slug!,
+                homeTabId: widget.tabData.id,
+                categorySlug: widget.category.slug,
                 lat: loc?.lat ?? 0.0,
                 lng: loc?.lng ?? 0.0,
                 resetFilters: false,
@@ -685,7 +687,8 @@ class _GrocerySubCategoryProductsPageState
                 final loc = locationService.locationNotifier.value;
                 context.read<CategoryProductsBloc>().add(
                   FetchProductsAndFiltersEvent(
-                    categorySlug: widget.category.slug!,
+                    homeTabId: widget.tabData.id,
+                    categorySlug: widget.category.slug,
                     lat: loc?.lat ?? 0.0,
                     lng: loc?.lng ?? 0.0,
                     resetFilters: true,
@@ -1005,12 +1008,18 @@ class _GrocerySubCategoryProductsPageState
     }
 
     final activeSubUuid = state.selectedSubCategoryUuId;
-    var products = (state.categoryProductsResponse.products ??
-        state.categoryProductsResponse.data?.subCategories
-            ?.where((sub) => activeSubUuid == null || sub.uuId == activeSubUuid)
-            .expand((sub) => sub.products ?? <ProductModel>[])
-            .toList() ??
-        []);
+    List<ProductModel> products = [];
+    if (state.categoryProductsResponse.products != null) {
+      products.addAll(state.categoryProductsResponse.products!);
+    } else if (state.categoryProductsResponse.data?.subCategories != null) {
+      for (final sub in state.categoryProductsResponse.data!.subCategories!) {
+        if (activeSubUuid == null || sub.uuId == activeSubUuid) {
+          if (sub.products != null) {
+            products.addAll(sub.products!);
+          }
+        }
+      }
+    }
 
     // Filter by subcategory client-side to ensure only products of selected subcategory are shown
     if (activeSubUuid != null) {
@@ -1121,7 +1130,8 @@ class _GrocerySubCategoryProductsPageState
                 final loc = locationService.locationNotifier.value;
                 context.read<CategoryProductsBloc>().add(
                   FetchProductsAndFiltersEvent(
-                    categorySlug: widget.category.slug!,
+                    homeTabId: widget.tabData.id,
+                    categorySlug: widget.category.slug,
                     lat: loc?.lat ?? 0.0,
                     lng: loc?.lng ?? 0.0,
                     resetFilters: false,

@@ -10,10 +10,14 @@ abstract class CategoryProductsRemoteDataSource {
   Future<CategoryProductsResponse> fetchCategoryProducts({
     required double lat,
     required double lng,
-    required String categorySlug,
-    String? subCategoryUuId,
+    required String subCategoryUuId,
+    int? homeTabId,
+    String? categorySlug,
+    String? search,
     String? tagUuId,
     String? sortBy,
+    int? page,
+    int? limit,
   });
 
   Future<CategoryFiltersResponse> fetchCategoryFilters({
@@ -30,18 +34,26 @@ class CategoryProductsRemoteDataSourceImpl implements CategoryProductsRemoteData
   Future<CategoryProductsResponse> fetchCategoryProducts({
     required double lat,
     required double lng,
-    required String categorySlug,
-    String? subCategoryUuId,
+    required String subCategoryUuId,
+    int? homeTabId,
+    String? categorySlug,
+    String? search,
     String? tagUuId,
     String? sortBy,
+    int? page,
+    int? limit,
   }) async {
     final url = ApiUrl.categoryProducts(
       lat: lat,
       lng: lng,
-      categorySlug: categorySlug,
       subCategoryUuId: subCategoryUuId,
+      homeTabId: homeTabId,
+      categorySlug: categorySlug,
+      search: search,
       tagUuId: tagUuId,
       sortBy: sortBy,
+      page: page,
+      limit: limit,
     );
     // logger.i("🌐 API CALL → CategoryProducts");
     // logger.d("URL: $url");
