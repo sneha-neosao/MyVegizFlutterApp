@@ -5,6 +5,7 @@ import '../../../core/utils/responsive_utils.dart';
 import '../../../config/injector_conf.dart';
 import 'package:my_vegiz_flutter/features/grocery_category/widget/grocery_product_card.dart';
 import '../data/models/homePage_model.dart';
+import '../data/models/home_tab_sub_categories_model.dart';
 import '../bloc/categoryProducts/category_products_bloc.dart';
 import '../bloc/categoryProducts/category_products_event.dart';
 import '../bloc/categoryProducts/category_products_state.dart';
@@ -88,7 +89,8 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
                 ..add(
                   FetchProductsAndFiltersEvent(
                     homeTabId: widget.tabData.id,
-                    categorySlug: cat.slug,
+                    homeTabUuId: widget.tabData.uuId,
+                    categorySlug: null,
                     lat: lat,
                     lng: lng,
                     resetFilters: true,
@@ -544,7 +546,8 @@ class _GrocerySubCategoryProductsPageState
             prodBloc.add(
               FetchProductsAndFiltersEvent(
                 homeTabId: widget.tabData.id,
-                categorySlug: widget.category.slug,
+                homeTabUuId: widget.tabData.uuId,
+                categorySlug: null,
                 lat: loc?.lat ?? 0.0,
                 lng: loc?.lng ?? 0.0,
                 resetFilters: false,
@@ -688,7 +691,8 @@ class _GrocerySubCategoryProductsPageState
                 context.read<CategoryProductsBloc>().add(
                   FetchProductsAndFiltersEvent(
                     homeTabId: widget.tabData.id,
-                    categorySlug: widget.category.slug,
+                    homeTabUuId: widget.tabData.uuId,
+                    categorySlug: null,
                     lat: loc?.lat ?? 0.0,
                     lng: loc?.lng ?? 0.0,
                     resetFilters: true,
@@ -706,6 +710,7 @@ class _GrocerySubCategoryProductsPageState
   Widget _buildSubCategorySidebar(CategoryProductsLoaded state) {
     final subCategories =
         state.categoryFiltersResponse.data?.subCategories ?? [];
+    final homeTabSubs = state.homeTabSubCategories ?? [];
     final productsSubCategories =
         state.categoryProductsResponse.data?.subCategories ?? [];
 
@@ -721,15 +726,33 @@ class _GrocerySubCategoryProductsPageState
           final sub = subCategories[index];
           final isSelected = state.selectedSubCategoryUuId == sub.key;
 
-          final matchedSub = widget.category.subCategories?.firstWhere(
-                (psub) => psub.uuId == sub.key,
-                orElse: () => productsSubCategories.firstWhere(
+          String? image;
+          if (homeTabSubs.isNotEmpty) {
+            final matched = homeTabSubs.firstWhere(
+              (s) => s.uuId == sub.key,
+              orElse: () => HomeTabSubCategoryItemModel(
+                id: 0,
+                uuId: '',
+                subCategoryName: '',
+                slug: '',
+                isActive: true,
+                createdAt: '',
+              ),
+            );
+            image = matched.subCategoryImage;
+          }
+
+          if (image == null || image.isEmpty) {
+            final matchedSub = widget.category.subCategories?.firstWhere(
                   (psub) => psub.uuId == sub.key,
-                  orElse: () => SubCategoryModel(),
-                ),
-              ) ??
-              SubCategoryModel();
-          final image = matchedSub.subCategoryImage;
+                  orElse: () => productsSubCategories.firstWhere(
+                    (psub) => psub.uuId == sub.key,
+                    orElse: () => SubCategoryModel(),
+                  ),
+                ) ??
+                SubCategoryModel();
+            image = matchedSub.subCategoryImage;
+          }
 
           return InkWell(
             onTap: () {
@@ -1131,7 +1154,8 @@ class _GrocerySubCategoryProductsPageState
                 context.read<CategoryProductsBloc>().add(
                   FetchProductsAndFiltersEvent(
                     homeTabId: widget.tabData.id,
-                    categorySlug: widget.category.slug,
+                    homeTabUuId: widget.tabData.uuId,
+                    categorySlug: null,
                     lat: loc?.lat ?? 0.0,
                     lng: loc?.lng ?? 0.0,
                     resetFilters: false,

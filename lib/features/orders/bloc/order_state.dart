@@ -1,4 +1,5 @@
 import '../data/models/order_model.dart';
+import '../data/models/today_active_order_model.dart';
 
 abstract class OrderState {}
 
@@ -14,6 +15,18 @@ class OrderListLoaded extends OrderState {
 class OrderListError extends OrderState {
   final String message;
   OrderListError(this.message);
+}
+
+class TodayActiveOrdersLoading extends OrderState {}
+
+class TodayActiveOrdersLoaded extends OrderState {
+  final TodayActiveOrdersResponse response;
+  TodayActiveOrdersLoaded(this.response);
+}
+
+class TodayActiveOrdersError extends OrderState {
+  final String message;
+  TodayActiveOrdersError(this.message);
 }
 
 class OrderDetailsLoading extends OrderState {}

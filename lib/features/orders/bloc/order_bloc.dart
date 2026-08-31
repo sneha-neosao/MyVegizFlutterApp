@@ -8,6 +8,7 @@ class GroceryOrderBloc extends Bloc<OrderEvent, OrderState> {
 
   GroceryOrderBloc({required this.repository}) : super(OrderInitial()) {
     on<FetchOrdersListEvent>(_onFetchOrdersList);
+    on<FetchTodayActiveOrdersEvent>(_onFetchTodayActiveOrders);
     on<FetchOrderDetailsEvent>(_onFetchOrderDetails);
     on<CancelOrderEvent>(_onCancelOrder);
   }
@@ -21,6 +22,21 @@ class GroceryOrderBloc extends Bloc<OrderEvent, OrderState> {
     result.fold(
       (failure) => emit(OrderListError(failure.message)),
       (response) => emit(OrderListLoaded(response.orders)),
+    );
+  }
+
+  Future<void> _onFetchTodayActiveOrders(
+    FetchTodayActiveOrdersEvent event,
+    Emitter<OrderState> emit,
+  ) async {
+    emit(TodayActiveOrdersLoading());
+    final result = await repository.getTodayActiveOrders(
+      page: event.page,
+      limit: event.limit,
+    );
+    result.fold(
+      (failure) => emit(TodayActiveOrdersError(failure.message)),
+      (response) => emit(TodayActiveOrdersLoaded(response)),
     );
   }
 

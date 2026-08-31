@@ -49,6 +49,13 @@ class ApiUrl {
     return url;
   }
 
+  static String homeTabSubCategories({
+    required String homeTabUuId,
+    int page = 1,
+    int limit = 10,
+  }) =>
+      "$baseUrl/web/home_tabs/sub-categories?home_tab_uu_id=$homeTabUuId&page=$page&limit=$limit";
+
   static String categoryProducts({
     required double lat,
     required double lng,
@@ -146,6 +153,8 @@ class ApiUrl {
 
   // Order Endpoints
   static String ordersList = "$baseUrl/web/orders/list";
+  static String todayActiveOrders({int page = 1, int limit = 10}) =>
+      "$baseUrl/web/orders/today-active-order?page=$page&limit=$limit";
   static String orderDetails(String uuId) =>
       "$baseUrl/web/orders/detail?uu_id=$uuId";
   static String cancelOrder = "$baseUrl/web/orders/cancel";

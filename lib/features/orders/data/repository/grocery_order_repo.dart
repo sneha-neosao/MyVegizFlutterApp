@@ -2,11 +2,16 @@ import 'package:fpdart/fpdart.dart';
 import '../../../../core/errors/failures.dart';
 import '../datasources/order_datasource.dart';
 import '../models/order_model.dart';
+import '../models/today_active_order_model.dart';
 import '../../../profile/data/models/rating_model.dart';
 import '../../../../core/utils/logger.dart';
 
 abstract class GroceryOrderRepository {
   Future<Either<Failure, OrderListResponse>> getOrdersList();
+  Future<Either<Failure, TodayActiveOrdersResponse>> getTodayActiveOrders({
+    int page = 1,
+    int limit = 10,
+  });
   Future<Either<Failure, OrderDetailsModel>> getOrderDetails(String uuId);
   Future<Either<Failure, CancelOrderResponseModel>> cancelOrder(
     String uuId,
@@ -40,6 +45,23 @@ class GroceryOrderRepositoryImpl implements GroceryOrderRepository {
       return Right(result);
     } catch (e) {
       logger.e("OrderRepositoryImpl getOrdersList error: $e");
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, TodayActiveOrdersResponse>> getTodayActiveOrders({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      final result = await remoteDataSource.getTodayActiveOrders(
+        page: page,
+        limit: limit,
+      );
+      return Right(result);
+    } catch (e) {
+      logger.e("GroceryOrderRepositoryImpl getTodayActiveOrders error: $e");
       return Left(ServerFailure(e.toString()));
     }
   }

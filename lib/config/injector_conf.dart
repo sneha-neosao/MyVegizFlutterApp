@@ -18,6 +18,7 @@ import '../features/auth/data/datasources/verifyOtp_datasource.dart';
 import '../features/auth/data/repository/regiVerifyOtp_repo.dart';
 import '../features/grocery_subCtegory/bloc/homePage/homePage_bloc.dart';
 import '../features/grocery_subCtegory/usecases/homePage_usecase.dart';
+import '../features/grocery_subCtegory/usecases/get_home_tab_sub_categories_usecase.dart';
 import '../features/search/data/datasources/search_remote_datasource.dart';
 import '../features/search/data/repository/search_repository.dart';
 import '../features/search/domain/usecases/search_products_usecase.dart';
@@ -202,6 +203,7 @@ void configureDependencies() {
   );
 
   getIt.registerLazySingleton(() => HomePageUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetHomeTabSubCategoriesUseCase(getIt()));
 
   getIt.registerLazySingleton(() => HomePageBloc(getIt()));
 
@@ -221,6 +223,7 @@ void configureDependencies() {
     () => CategoryProductsBloc(
       getCategoryProductsUseCase: getIt(),
       getCategoryFiltersUseCase: getIt(),
+      getHomeTabSubCategoriesUseCase: getIt(),
     ),
   );
 

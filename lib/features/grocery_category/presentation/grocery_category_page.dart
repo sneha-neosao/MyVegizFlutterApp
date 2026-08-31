@@ -339,8 +339,9 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
                 ..add(
                   FetchProductsAndFiltersEvent(
                     homeTabId: card.id,
-                    categorySlug: categorySlug,
-                    subCategoryUuId: null, // empty subcategory uuid
+                    homeTabUuId: card.uuId,
+                    categorySlug: null,
+                    subCategoryUuId: null,
                     lat: lat,
                     lng: lng,
                     resetFilters: true,

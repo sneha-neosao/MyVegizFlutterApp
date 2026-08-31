@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import '../../../../core/errors/failures.dart';
 import '../models/homePage_model.dart';
+import '../models/home_tab_sub_categories_model.dart';
 import '../datasources/homePage_datasource.dart';
 import '../../../../core/api/api/api_exception.dart';
 
@@ -11,6 +12,12 @@ abstract class HomePageRepository {
     required double lat,
     required double lng,
     String? q,
+  });
+
+  Future<Either<Failure, HomeTabSubCategoriesResponse>> getHomeTabSubCategories({
+    required String homeTabUuId,
+    int page = 1,
+    int limit = 10,
   });
 }
 
@@ -40,6 +47,32 @@ class HomePageRepositoryImpl implements HomePageRepository {
       } else {
         return Left(
           ServerFailure(data.message ?? "Failed to fetch home page data"),
+        );
+      }
+    } on ApiException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, HomeTabSubCategoriesResponse>> getHomeTabSubCategories({
+    required String homeTabUuId,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      final data = await remoteDataSource.fetchHomeTabSubCategories(
+        homeTabUuId: homeTabUuId,
+        page: page,
+        limit: limit,
+      );
+      if (data.status == 200 || data.status == 201) {
+        return Right(data);
+      } else {
+        return Left(
+          ServerFailure(data.message.isNotEmpty ? data.message : "Failed to fetch sub-categories"),
         );
       }
     } on ApiException catch (e) {

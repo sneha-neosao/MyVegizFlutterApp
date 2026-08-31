@@ -1,5 +1,6 @@
 import '../../data/models/homePage_model.dart';
 import '../../data/models/category_filters_model.dart';
+import '../../data/models/home_tab_sub_categories_model.dart';
 
 abstract class CategoryProductsState {}
 
@@ -10,6 +11,7 @@ class CategoryProductsLoading extends CategoryProductsState {}
 class CategoryProductsLoaded extends CategoryProductsState {
   final CategoryProductsResponse categoryProductsResponse;
   final CategoryFiltersResponse categoryFiltersResponse;
+  final List<HomeTabSubCategoryItemModel>? homeTabSubCategories;
   final String? selectedSubCategoryUuId;
   final String? selectedTagUuId;
   final String? selectedSortBy;
@@ -18,6 +20,7 @@ class CategoryProductsLoaded extends CategoryProductsState {
   CategoryProductsLoaded({
     required this.categoryProductsResponse,
     required this.categoryFiltersResponse,
+    this.homeTabSubCategories,
     this.selectedSubCategoryUuId,
     this.selectedTagUuId,
     this.selectedSortBy,
@@ -27,6 +30,7 @@ class CategoryProductsLoaded extends CategoryProductsState {
   CategoryProductsLoaded copyWith({
     CategoryProductsResponse? categoryProductsResponse,
     CategoryFiltersResponse? categoryFiltersResponse,
+    List<HomeTabSubCategoryItemModel>? homeTabSubCategories,
     String? selectedSubCategoryUuId,
     bool clearSubCategory = false,
     String? selectedTagUuId,
@@ -38,6 +42,7 @@ class CategoryProductsLoaded extends CategoryProductsState {
     return CategoryProductsLoaded(
       categoryProductsResponse: categoryProductsResponse ?? this.categoryProductsResponse,
       categoryFiltersResponse: categoryFiltersResponse ?? this.categoryFiltersResponse,
+      homeTabSubCategories: homeTabSubCategories ?? this.homeTabSubCategories,
       selectedSubCategoryUuId: clearSubCategory ? null : (selectedSubCategoryUuId ?? this.selectedSubCategoryUuId),
       selectedTagUuId: clearTag ? null : (selectedTagUuId ?? this.selectedTagUuId),
       selectedSortBy: clearSortBy ? null : (selectedSortBy ?? this.selectedSortBy),

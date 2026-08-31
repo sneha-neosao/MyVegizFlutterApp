@@ -1,17 +1,22 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/models/category_filters_model.dart';
+import '../../data/models/homePage_model.dart';
+import '../../data/models/home_tab_sub_categories_model.dart';
 import '../../usecases/get_category_products_usecase.dart';
 import '../../usecases/get_category_filters_usecase.dart';
+import '../../usecases/get_home_tab_sub_categories_usecase.dart';
 import 'category_products_event.dart';
 import 'category_products_state.dart';
 
 class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsState> {
   final GetCategoryProductsUseCase getCategoryProductsUseCase;
   final GetCategoryFiltersUseCase getCategoryFiltersUseCase;
+  final GetHomeTabSubCategoriesUseCase getHomeTabSubCategoriesUseCase;
 
   // Stored state for network calls
   int? _currentHomeTabId;
+  String? _currentHomeTabUuId;
   String? _currentCategorySlug;
   String? _currentSearch;
   double? _currentLat;
@@ -20,6 +25,7 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
   CategoryProductsBloc({
     required this.getCategoryProductsUseCase,
     required this.getCategoryFiltersUseCase,
+    required this.getHomeTabSubCategoriesUseCase,
   }) : super(CategoryProductsInitial()) {
     on<FetchProductsAndFiltersEvent>(_onFetchProductsAndFilters);
     on<FilterSubCategoryChangedEvent>(_onFilterSubCategoryChanged);
@@ -32,6 +38,7 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     Emitter<CategoryProductsState> emit,
   ) async {
     _currentHomeTabId = event.homeTabId;
+    _currentHomeTabUuId = event.homeTabUuId;
     _currentCategorySlug = event.categorySlug;
     _currentSearch = event.search;
     _currentLat = event.lat;
@@ -39,9 +46,66 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
 
     emit(CategoryProductsLoading());
 
-    final targetSubUuid = event.subCategoryUuId;
+    // 1. If homeTabUuId is provided, fetch sub-categories using the home_tabs/sub-categories API
+    if (event.homeTabUuId != null && event.homeTabUuId!.isNotEmpty) {
+      final subCatsResult = await getHomeTabSubCategoriesUseCase.call(
+        homeTabUuId: event.homeTabUuId!,
+        page: 1,
+        limit: 100,
+      );
 
-    if (event.categorySlug != null && event.categorySlug!.isNotEmpty) {
+      await subCatsResult.fold(
+        (failure) async {
+          logger.e("📦 HomeTabSubCategories error: ${failure.message}");
+          emit(CategoryProductsError(failure.message));
+        },
+        (subCatsData) async {
+          final subCatsList = subCatsData.data;
+          final targetSubUuid = (event.subCategoryUuId != null && event.subCategoryUuId!.isNotEmpty)
+              ? event.subCategoryUuId!
+              : (subCatsList.isNotEmpty ? subCatsList.first.uuId : '');
+
+          final filterOptions = subCatsList
+              .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
+              .toList();
+
+          final productsResult = await getCategoryProductsUseCase(
+            lat: event.lat,
+            lng: event.lng,
+            subCategoryUuId: targetSubUuid,
+            homeTabId: event.homeTabId,
+            categorySlug: null,
+            search: event.search,
+          );
+
+          productsResult.fold(
+            (failure) {
+              logger.e("📦 CategoryProducts error: ${failure.message}");
+              emit(CategoryProductsError(failure.message));
+            },
+            (productsData) {
+              emit(CategoryProductsLoaded(
+                categoryProductsResponse: productsData,
+                categoryFiltersResponse: CategoryFiltersResponse(
+                  status: 200,
+                  message: '',
+                  data: CategoryFiltersData(
+                    subCategories: filterOptions,
+                    sortOptions: [],
+                    tags: [],
+                  ),
+                ),
+                homeTabSubCategories: subCatsList,
+                selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+                selectedTagUuId: null,
+                selectedSortBy: null,
+                isProductsLoading: false,
+              ));
+            },
+          );
+        },
+      );
+    } else if (event.categorySlug != null && event.categorySlug!.isNotEmpty) {
       final filtersResult = await getCategoryFiltersUseCase(categorySlug: event.categorySlug!);
 
       await filtersResult.fold(
@@ -178,12 +242,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     final String? tagId = tagUuId ?? currentState.selectedTagUuId;
     final String? sort = sortBy ?? currentState.selectedSortBy;
 
+    final String? effectiveCategorySlug = (_currentHomeTabUuId != null && _currentHomeTabUuId!.isNotEmpty)
+        ? null
+        : _currentCategorySlug;
+
     final result = await getCategoryProductsUseCase(
       lat: _currentLat!,
       lng: _currentLng!,
       subCategoryUuId: subId,
       homeTabId: _currentHomeTabId,
-      categorySlug: _currentCategorySlug,
+      categorySlug: effectiveCategorySlug,
       search: _currentSearch,
       tagUuId: tagId,
       sortBy: sort,

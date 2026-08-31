@@ -1,11 +1,13 @@
 import '../../../../core/api/api/api_helper.dart';
 import '../../../../core/api/api/api_url.dart';
 import '../models/order_model.dart';
+import '../models/today_active_order_model.dart';
 import '../../../profile/data/models/rating_model.dart';
 import '../../../../core/utils/logger.dart';
 
 abstract class OrderRemoteDataSource {
   Future<OrderListResponse> getOrdersList();
+  Future<TodayActiveOrdersResponse> getTodayActiveOrders({int page = 1, int limit = 10});
   Future<OrderDetailsModel> getOrderDetails(String uuId);
   Future<CancelOrderResponseModel> cancelOrder(String uuId, String note);
   
@@ -35,6 +37,25 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       }
     } catch (e) {
       logger.e("OrderRemoteDataSourceImpl getOrdersList error: $e");
+      rethrow;
+    }
+  }
+
+  @override
+  Future<TodayActiveOrdersResponse> getTodayActiveOrders({int page = 1, int limit = 10}) async {
+    try {
+      final response = await apiHelper.execute(
+        method: Method.get,
+        url: ApiUrl.todayActiveOrders(page: page, limit: limit),
+      );
+      if (response != null) {
+        logger.d("todayActiveOrders JSON response: $response");
+        return TodayActiveOrdersResponse.fromJson(response);
+      } else {
+        throw Exception("Failed to load today active orders");
+      }
+    } catch (e) {
+      logger.e("OrderRemoteDataSourceImpl getTodayActiveOrders error: $e");
       rethrow;
     }
   }

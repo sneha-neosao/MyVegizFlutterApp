@@ -2,6 +2,7 @@ abstract class CategoryProductsEvent {}
 
 class FetchProductsAndFiltersEvent extends CategoryProductsEvent {
   final int? homeTabId;
+  final String? homeTabUuId;
   final String? categorySlug;
   final String? subCategoryUuId;
   final String? search;
@@ -11,6 +12,7 @@ class FetchProductsAndFiltersEvent extends CategoryProductsEvent {
 
   FetchProductsAndFiltersEvent({
     this.homeTabId,
+    this.homeTabUuId,
     this.categorySlug,
     this.subCategoryUuId,
     this.search,
