@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.my_vegiz_flutter"
+    namespace = "com.nsdelivery.customer"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
