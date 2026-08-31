@@ -182,14 +182,14 @@ class MyViggiesApp extends StatelessWidget {
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.transparent,
           ),
-          textTheme: GoogleFonts.interTextTheme(
+          textTheme: GoogleFonts.nunitoTextTheme(
             Theme.of(context).textTheme,
           ).apply(bodyColor: Colors.black87, displayColor: Colors.black87),
-          appBarTheme: const AppBarTheme(
+          appBarTheme: AppBarTheme(
             backgroundColor: Colors.white,
             elevation: 0,
-            iconTheme: IconThemeData(color: Colors.black87),
-            titleTextStyle: TextStyle(
+            iconTheme: const IconThemeData(color: Colors.black87),
+            titleTextStyle: GoogleFonts.nunito(
               color: Colors.black87,
               fontWeight: FontWeight.bold,
               fontSize: 18,

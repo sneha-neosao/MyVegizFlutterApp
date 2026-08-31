@@ -51,6 +51,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/splash image.png'), context);
+    precacheImage(const AssetImage('assets/images/login_bg.png'), context);
+    precacheImage(const AssetImage('assets/images/signup_bg.png'), context);
+    precacheImage(const AssetImage('assets/images/bottom_img.png'), context);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
@@ -62,6 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
             width: double.infinity,
             height: double.infinity,
             fit: BoxFit.cover,
+            gaplessPlayback: true,
           ),
 
           // Center Animated Logo

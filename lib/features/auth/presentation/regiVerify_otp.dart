@@ -1,10 +1,13 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import '../../../routes/app_route_path.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/responsive_utils.dart';
 import '../bloc/signup_blocs/regiVerifyOtp_blocs/regiVerifyOtp_bloc.dart';
 import '../bloc/signup_blocs/regiVerifyOtp_blocs/regiVerifyOtp_event.dart';
 import '../bloc/signup_blocs/regiVerifyOtp_blocs/regiVerifyOtp_state.dart';
@@ -42,20 +45,39 @@ class _OtpScreenState extends State<RegiverifyOtp>
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   bool isLoading = false;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/login_bg.png'), context);
+    precacheImage(const AssetImage('assets/images/bottom_img.png'), context);
+  }
+
+  @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 650),
     );
 
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.35),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
     );
 
     _animationController.forward();
@@ -75,6 +97,10 @@ class _OtpScreenState extends State<RegiverifyOtp>
 
   void _onVerify() {
     final otp = getOtp();
+    if (otp.length != 6) {
+      SnackbarUtils.showErrorSnackbar(context, 'Please enter 6 digit OTP');
+      return;
+    }
 
     context.read<RegiVerifyOtpBloc>().add(
       RegiVerifyOtpPressed(mobile: widget.mobile, otp: otp),
@@ -90,10 +116,6 @@ class _OtpScreenState extends State<RegiverifyOtp>
         mobile: widget.mobile,
       ),
     );
-  }
-
-  void _showError(String msg) {
-    SnackbarUtils.showErrorSnackbar(context, msg);
   }
 
   @override
@@ -132,18 +154,18 @@ class _OtpScreenState extends State<RegiverifyOtp>
                   await SecureStorage.saveCustomerContact(data.customer.contact);
                   await SecureStorage.saveCustomerEmail(data.customer.email ?? '');
                   await SecureStorage.saveCustomerUuid(data.customer.uuId);
-                  
+
                   // Update FCM Token on server
                   NoficationService.updateTokenOnServer();
 
                   logger.i(
                     '✅ RegiVerifyOtp: Account created & logged in successfully — navigating to home',
                   );
-                  
+
                   if (context.mounted) {
                     context.read<WishlistBloc>().add(FetchWishlist());
                     context.read<AddressBloc>().add(FetchAddressList());
-                    
+
                     SnackbarUtils.showSuccessSnackbar(
                       context,
                       state.model.message,
@@ -163,187 +185,316 @@ class _OtpScreenState extends State<RegiverifyOtp>
         ),
       ],
       child: Scaffold(
-        backgroundColor: Colors.grey.shade50,
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final isSmall = constraints.maxHeight < 600;
-            final bgHeight = isSmall ? 250.0 : 280.0;
-            final cardTop = isSmall ? 150.0 : 180.0;
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
+            // ── Full-screen Background Image ──
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/login_bg.png',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                gaplessPlayback: true,
+              ),
+            ),
 
-            return SingleChildScrollView(
-              child: Stack(
-                children: [
-                  /// HEADER
-                  Container(
-                    height: bgHeight,
+            // ── Bottom Anchored White Sheet ──
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.deepOrange, Colors.orange],
-                      ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(40),
-                        bottomRight: Radius.circular(40),
+                        topLeft: Radius.circular(28.w),
+                        topRight: Radius.circular(28.w),
                       ),
-                    ),
-                    child: SafeArea(
-                      child: Column(
-                        children: const [
-                          SizedBox(height: 20),
-                          Text(
-                            "Registration Verify OTP",
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            "Enter 6 digit code",
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  /// CARD
-                  Padding(
-                    padding: EdgeInsets.only(top: cardTop, left: 24, right: 24),
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 20,
-                            ),
-                          ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, -4),
                         ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28.w),
+                        topRight: Radius.circular(28.w),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            /// MOBILE TEXT
-                            Text(
-                              "OTP sent to ${widget.mobile}",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            Pinput(
-                              length: 6,
-                              controller: pinController,
-                              focusNode: pinFocusNode,
-                              autofocus: true,
-                              keyboardType: TextInputType.number,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              defaultPinTheme: PinTheme(
-                                width: 45,
-                                height: 50,
-                                textStyle: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade300),
-                                ),
-                              ),
-                              focusedPinTheme: PinTheme(
-                                width: 45,
-                                height: 50,
-                                textStyle: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.deepOrange, width: 2),
-                                ),
-                              ),
-                              submittedPinTheme: PinTheme(
-                                width: 45,
-                                height: 50,
-                                textStyle: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade400),
-                                  color: Colors.grey.shade50,
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            /// VERIFY BUTTON
-                            SizedBox(
-                              width: double.infinity,
-                              height: 55,
-                              child: ElevatedButton(
-                                onPressed: isLoading ? null : _onVerify,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.deepOrange,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: isLoading
-                                    ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                                    : const Text(
-                                  "VERIFY OTP",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            /// RESEND
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text("Didn't receive code? "),
-                                GestureDetector(
-                                  onTap: _onResend,
-                                  child: const Text(
-                                    "Resend",
-                                    style: TextStyle(
-                                      color: Colors.deepOrange,
-                                      fontWeight: FontWeight.bold,
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(24.w, 28.h, 24.w, 0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header: VERIFY OTP 🍃
+                                  Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'VERIFY OTP',
+                                          style: TextStyle(
+                                            fontSize: 22.sp,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: -0.3,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        SizedBox(width: 4.w),
+                                        Text(
+                                          '🍃',
+                                          style: TextStyle(fontSize: 16.sp),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: 8.h),
+
+                                  // Sent to mobile subtitle
+                                  Center(
+                                    child: RichText(
+                                      textAlign: TextAlign.center,
+                                      text: TextSpan(
+                                        text: "Enter OTP sent to ",
+                                        style: TextStyle(
+                                          fontSize: 13.5.sp,
+                                          color: Colors.grey.shade600,
+                                          fontFamily:
+                                              GoogleFonts.nunito().fontFamily,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: widget.mobile,
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 22.h),
+
+                                  // Pinput Field
+                                  Center(
+                                     child: Pinput(
+                                       length: 6,
+                                       controller: pinController,
+                                       focusNode: pinFocusNode,
+                                       autofocus: false,
+                                      keyboardType: TextInputType.number,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      defaultPinTheme: PinTheme(
+                                        width: 46.w,
+                                        height: 50.h,
+                                        textStyle: TextStyle(
+                                          fontSize: 20.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFBFBFB),
+                                          borderRadius:
+                                              BorderRadius.circular(14.w),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      focusedPinTheme: PinTheme(
+                                        width: 46.w,
+                                        height: 50.h,
+                                        textStyle: TextStyle(
+                                          fontSize: 20.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(14.w),
+                                          border: Border.all(
+                                            color: const Color(0xFFFF5722),
+                                            width: 1.8,
+                                          ),
+                                        ),
+                                      ),
+                                      submittedPinTheme: PinTheme(
+                                        width: 46.w,
+                                        height: 50.h,
+                                        textStyle: TextStyle(
+                                          fontSize: 20.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(14.w),
+                                          border: Border.all(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          color: Colors.grey.shade50,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 22.h),
+
+                                  // VERIFY Button with circular right arrow
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 50.h,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFFFF5722),
+                                            Color(0xFFFF7A00),
+                                          ],
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(28.w),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFFF5722)
+                                                .withOpacity(0.35),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ElevatedButton(
+                                        onPressed: isLoading ? null : _onVerify,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.transparent,
+                                          shadowColor: Colors.transparent,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(28.w),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        child: isLoading
+                                            ? const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 2.5,
+                                                ),
+                                              )
+                                            : Stack(
+                                                alignment: Alignment.center,
+                                                children: [
+                                                  Center(
+                                                    child: Text(
+                                                      'Verify & Continue',
+                                                      style: TextStyle(
+                                                        fontSize: 15.5.sp,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    right: 8.w,
+                                                    child: Container(
+                                                      width: 34.w,
+                                                      height: 34.w,
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                        color: Colors.white,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: Icon(
+                                                        Icons
+                                                            .arrow_forward_rounded,
+                                                        color: const Color(
+                                                            0xFFFF5722),
+                                                        size: 18.w,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 18.h),
+
+                                  // RESEND OPTIONS
+                                  Center(
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 13.5.sp,
+                                          fontFamily:
+                                              GoogleFonts.nunito().fontFamily,
+                                        ),
+                                        children: [
+                                          const TextSpan(
+                                            text: "Didn't receive OTP? ",
+                                          ),
+                                          TextSpan(
+                                            text: "Resend",
+                                            style: TextStyle(
+                                              color: const Color(0xFFFF5722),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13.5.sp,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = _onResend,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Image.asset(
+                              'assets/images/bottom_img.png',
+                              width: double.infinity,
+                              fit: BoxFit.fitWidth,
+                              gaplessPlayback: true,
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/responsive_utils.dart';
 import '../../../routes/app_route_path.dart';
 import '../bloc/login_blocs/login_bloc/sendOtp_bloc.dart';
 import '../bloc/login_blocs/login_bloc/sendOtp_event.dart';
@@ -25,9 +26,17 @@ class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController mobileController = TextEditingController();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/login_bg.png'), context);
+    precacheImage(const AssetImage('assets/images/bottom_img.png'), context);
+  }
 
   @override
   void initState() {
@@ -41,10 +50,19 @@ class _LoginScreenState extends State<LoginScreen>
     });
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 650),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.35),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
     );
     _animationController.forward();
   }
@@ -54,6 +72,23 @@ class _LoginScreenState extends State<LoginScreen>
     _animationController.dispose();
     mobileController.dispose();
     super.dispose();
+  }
+
+  void _onGetOtpPressed() {
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final rawMobile = mobileController.text.trim();
+    if (rawMobile.length != 10) {
+      SnackbarUtils.showErrorSnackbar(
+        context,
+        'Please enter valid mobile number',
+      );
+      return;
+    }
+    logger.i('🔐 LoginScreen: "Get OTP" clicked for $rawMobile');
+    context.read<SendOtpBloc>().add(SendOtpButtonPressed(rawMobile));
   }
 
   @override
@@ -67,6 +102,7 @@ class _LoginScreenState extends State<LoginScreen>
         }
 
         if (state is SendOtpSuccess) {
+          FocusScope.of(context).unfocus();
           final mobile = mobileController.text.trim();
           logger.i(
             '✅ LoginScreen: OTP sent successfully to $mobile — navigating to OTP screen',
@@ -88,228 +124,274 @@ class _LoginScreenState extends State<LoginScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.grey.shade50,
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final isSmallScreen = constraints.maxHeight < 600;
-            final double bgHeight = isSmallScreen ? 340 : 380;
-            final double cardTopPosition = isSmallScreen ? 180 : 220;
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
+            // ── Full-screen Background Image ──
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/login_bg.png',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                gaplessPlayback: true,
+              ),
+            ),
 
-            return SingleChildScrollView(
-              child: Stack(
-                children: [
-                  /// TOP GRADIENT
-                  Container(
-                    height: bgHeight,
+            // ── Bottom Anchored White Sheet ──
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.deepOrange, Colors.orange],
-                      ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(40),
-                        bottomRight: Radius.circular(40),
+                        topLeft: Radius.circular(28.w),
+                        topRight: Radius.circular(28.w),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
                     ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.all(34),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28.w),
+                        topRight: Radius.circular(28.w),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 30),
-                            const Text(
-                              'Welcome Back',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Login with mobile number to get OTP',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 0),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Header: WELCOME BACK ! 🍃
+                                    Center(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'WELCOME BACK !',
+                                            style: TextStyle(
+                                              fontSize: 21.sp,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -0.3,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            '🍃',
+                                            style: TextStyle(fontSize: 15.sp),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 12.h),
 
-                  /// CARD
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: cardTopPosition,
-                      left: 24,
-                      right: 24,
-                    ),
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 20,
-                            ),
-                          ],
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 5),
-                              _buildTextField(),
-                              const SizedBox(height: 20),
+                                    // Mobile Number Label
+                                    Text(
+                                      'Mobile Number',
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey.shade800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 5.h),
 
-                              /// BUTTON WITH LOADING
-                              BlocBuilder<SendOtpBloc, SendOtpState>(
-                                builder: (context, state) {
-                                  final isLoading = state is SendOtpLoading;
-                                  return SizedBox(
-                                    width: double.infinity,
-                                    height: 55,
-                                    child: ElevatedButton(
-                                      onPressed: isLoading
-                                          ? null
-                                          : () {
-                                              logger.i(
-                                                '🔐 LoginScreen: "GET OTP" button tapped',
-                                              );
-                                              final mobile = mobileController
-                                                  .text
-                                                  .trim();
-                                              if (mobile.length != 10) {
-                                                SnackbarUtils.showErrorSnackbar(
-                                                  context,
-                                                  'Please enter valid mobile number',
-                                                );
-                                                return;
-                                              }
-                                              logger.i(
-                                                '📱 LoginScreen: Sending OTP to $mobile',
-                                              );
-                                              context.read<SendOtpBloc>().add(
-                                                SendOtpButtonPressed(mobile),
-                                              );
-                                            },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.deepOrange,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                    // Input Field
+                                    _buildTextField(),
+                                    SizedBox(height: 14.h),
+
+                                    // Get OTP Button
+                                    BlocBuilder<SendOtpBloc, SendOtpState>(
+                                      builder: (context, state) {
+                                        final isLoading = state is SendOtpLoading;
+
+                                        return SizedBox(
+                                          width: double.infinity,
+                                          height: 46.h,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFFFF5722),
+                                                  Color(0xFFFF7A00),
+                                                ],
+                                              ),
+                                              borderRadius: BorderRadius.circular(28.w),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFFFF5722)
+                                                      .withOpacity(0.35),
+                                                  blurRadius: 12,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ElevatedButton(
+                                              onPressed: isLoading
+                                                  ? null
+                                                  : _onGetOtpPressed,
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.transparent,
+                                                shadowColor: Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(28.w),
+                                                ),
+                                                padding: EdgeInsets.zero,
+                                              ),
+                                              child: isLoading
+                                                  ? const SizedBox(
+                                                      width: 24,
+                                                      height: 24,
+                                                      child: CircularProgressIndicator(
+                                                        color: Colors.white,
+                                                        strokeWidth: 2.5,
+                                                      ),
+                                                    )
+                                                  : Stack(
+                                                      alignment: Alignment.center,
+                                                      children: [
+                                                        Center(
+                                                          child: Text(
+                                                            'Get OTP',
+                                                            style: TextStyle(
+                                                              fontSize: 15.sp,
+                                                              fontWeight: FontWeight.w700,
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Positioned(
+                                                          right: 8.w,
+                                                          child: Container(
+                                                            width: 32.w,
+                                                            height: 32.w,
+                                                            decoration: const BoxDecoration(
+                                                              color: Colors.white,
+                                                              shape: BoxShape.circle,
+                                                            ),
+                                                            child: Icon(
+                                                              Icons.arrow_forward_rounded,
+                                                              color: const Color(0xFFFF5722),
+                                                              size: 17.w,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+
+                                    SizedBox(height: 10.h),
+
+                                    // OR Divider
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Divider(
+                                            color: Colors.grey.shade300,
+                                            thickness: 0.8,
                                           ),
                                         ),
-                                      ),
-                                      child: isLoading
-                                          ? const CircularProgressIndicator(
-                                              color: Colors.white,
-                                            )
-                                          : const Text(
-                                              'GET OTP',
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                          child: Text(
+                                            'OR',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade500,
+                                              fontSize: 11.5.sp,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Divider(
+                                            color: Colors.grey.shade300,
+                                            thickness: 0.8,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    SizedBox(height: 8.h),
+
+                                    // Don't have account? Sign Up
+                                    Center(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "Don't have account? ",
+                                            style: TextStyle(
+                                              color: Colors.grey.shade700,
+                                              fontSize: 12.5.sp,
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              logger.i('🔐 LoginScreen: "Sign Up" tapped — navigating to signup');
+                                              context.push(AppRoutePath.signup);
+                                            },
+                                            child: Text(
+                                              'Sign Up',
                                               style: TextStyle(
+                                                color: const Color(0xFFFF5722),
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                                fontSize: 12.5.sp,
                                               ),
                                             ),
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Divider(color: Colors.grey.shade300),
-                                  ),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                    ),
-                                    child: Text('OR'),
-                                  ),
-                                  Expanded(
-                                    child: Divider(color: Colors.grey.shade300),
-                                  ),
-                                ],
-                              ),
-
-                              // const SizedBox(height: 25),
-
-                              /// GOOGLE BUTTON
-                              // Row(
-                              //   mainAxisAlignment: MainAxisAlignment.center,
-                              //   children: [
-                              //     Image.network(
-                              //       NetworkImages.googleLogo,
-                              //       height: 20,
-                              //       errorBuilder: (_, __, ___) => const Icon(
-                              //         Icons.g_mobiledata,
-                              //         size: 30,
-                              //       ),
-                              //     ),
-                              //     const SizedBox(width: 10),
-                              //     GestureDetector(
-                              //       onTap: () {
-                              //         logger.i(
-                              //           '🔐 LoginScreen: "Continue with Google" tapped (not implemented)',
-                              //         );
-                              //         // TODO: Google login
-                              //       },
-                              //       child: const Text(
-                              //         'Continue with Google',
-                              //         style: TextStyle(
-                              //           fontWeight: FontWeight.bold,
-                              //         ),
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
-
-                              const SizedBox(height: 25),
-
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text("Don't have account? "),
-                                  GestureDetector(
-                                    onTap: () {
-                                      logger.i(
-                                        '🔐 LoginScreen: "Sign Up" tapped — navigating to signup',
-                                      );
-                                      context.push(AppRoutePath.signup);
-                                    },
-                                    child: const Text(
-                                      'Sign Up',
-                                      style: TextStyle(
-                                        color: Colors.deepOrange,
-                                        fontWeight: FontWeight.bold,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                            Image.asset(
+                              'assets/images/bottom_img.png',
+                              width: double.infinity,
+                              fit: BoxFit.fitWidth,
+                              gaplessPlayback: true,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTextField() {
     return TextFormField(
@@ -326,23 +408,67 @@ class _LoginScreenState extends State<LoginScreen>
         }
         return null;
       },
+      style: TextStyle(
+        fontSize: 15.sp,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
       decoration: InputDecoration(
         counterText: '',
-        labelText: 'Mobile Number',
-        prefixIcon: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            SizedBox(width: 12),
-            Text(
-              '+91',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            SizedBox(width: 8),
-            Text('|'),
-            SizedBox(width: 8),
-          ],
+        hintText: 'Enter mobile number',
+        hintStyle: TextStyle(
+          color: Colors.grey.shade400,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.normal,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        filled: true,
+        fillColor: const Color(0xFFFBFBFB),
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        prefixIcon: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.phone_outlined,
+                color: const Color(0xFFFF5722),
+                size: 18.sp,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                '+91',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.5.sp,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Container(
+                width: 1,
+                height: 20.h,
+                color: Colors.grey.shade300,
+              ),
+              SizedBox(width: 8.w),
+            ],
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.w),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.w),
+          borderSide: const BorderSide(color: Color(0xFFFF5722), width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.w),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.w),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
       ),
     );
   }
