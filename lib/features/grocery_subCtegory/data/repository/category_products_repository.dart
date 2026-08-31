@@ -55,7 +55,7 @@ class CategoryProductsRepositoryImpl implements CategoryProductsRepository {
         page: page,
         limit: limit,
       );
-      if (data.status == 200 || data.status == 201) {
+      if (data.status == 200 || data.status == 201 || data.status == 300) {
         return Right(data);
       } else {
         return Left(

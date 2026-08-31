@@ -180,7 +180,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
           if (section.title != null) {
             slivers.add(_buildSectionHeader(section.title!));
           }
-          slivers.add(_buildCategoryGrid(filteredCats));
+          slivers.add(_buildHorizontalCategoryList(filteredCats));
         }
       } else if (section.sectionType == 'product_list' &&
           section.products != null &&
@@ -268,13 +268,14 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
   Widget _buildSectionHeader(String title) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 6.h),
+        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
         child: Text(
           title,
           style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
+            fontSize: 17.sp,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+            color: const Color(0xFF111827),
             height: 1.2,
           ),
         ),
@@ -282,72 +283,80 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
     );
   }
 
-  Widget _buildCategoryGrid(List<CategoryModel> categories) {
-    return SliverPadding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          childAspectRatio: 0.60,
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 18,
-        ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final cat = categories[index];
-          return GestureDetector(
-            onTap: () => _navigateToProductsPage(cat),
-            child: Column(
-              children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+  Widget _buildHorizontalCategoryList(List<CategoryModel> categories) {
+    if (categories.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 98.h,
+        child: ListView.separated(
+          padding: EdgeInsets.symmetric(horizontal: 14.w),
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: categories.length,
+          separatorBuilder: (context, index) => SizedBox(width: 12.w),
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            return GestureDetector(
+              onTap: () => _navigateToProductsPage(cat),
+              child: SizedBox(
+                width: 72.w,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 60.w,
+                      height: 60.w,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 1.2,
                         ),
-                      ],
-                      border: Border.all(
-                        color: Colors.grey.shade100,
-                        width: 1.5,
+                      ),
+                      child: cat.categoryImage != null && cat.categoryImage!.isNotEmpty
+                          ? ClipOval(
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Image.network(
+                                  cat.categoryImage!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Icon(Icons.category, size: 26.w, color: Colors.grey.shade400),
+                                ),
+                              ),
+                            )
+                          : Icon(Icons.category, size: 26.w, color: Colors.grey.shade400),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      cat.categoryName ?? '',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                        height: 1.1,
                       ),
                     ),
-                    child: cat.categoryImage != null
-                        ? Padding(
-                            padding: const EdgeInsets.all(1.5),
-                            child: ClipOval(
-                              child: Image.network(
-                                cat.categoryImage!,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          )
-                        : null,
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Flexible(
-                  child: Text(
-                    cat.categoryName ?? '',
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
-                      height: 1.1,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }, childCount: categories.length),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -1135,7 +1144,7 @@ class _GrocerySubCategoryProductsPageState
           ),
           const SizedBox(height: 16),
           const Text(
-            'No data found',
+            'No products found',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey,

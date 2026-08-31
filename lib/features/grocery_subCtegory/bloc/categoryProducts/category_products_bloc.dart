@@ -80,8 +80,28 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
 
           productsResult.fold(
             (failure) {
-              logger.e("📦 CategoryProducts error: ${failure.message}");
-              emit(CategoryProductsError(failure.message));
+              logger.w("📦 CategoryProducts notice: ${failure.message}");
+              emit(CategoryProductsLoaded(
+                categoryProductsResponse: CategoryProductsResponse(
+                  status: 300,
+                  message: failure.message,
+                  products: [],
+                ),
+                categoryFiltersResponse: CategoryFiltersResponse(
+                  status: 200,
+                  message: '',
+                  data: CategoryFiltersData(
+                    subCategories: filterOptions,
+                    sortOptions: [],
+                    tags: [],
+                  ),
+                ),
+                homeTabSubCategories: subCatsList,
+                selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+                selectedTagUuId: null,
+                selectedSortBy: null,
+                isProductsLoading: false,
+              ));
             },
             (productsData) {
               emit(CategoryProductsLoaded(
@@ -129,8 +149,19 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
 
           productsResult.fold(
             (failure) {
-              logger.e("📦 CategoryProducts error: ${failure.message}");
-              emit(CategoryProductsError(failure.message));
+              logger.w("📦 CategoryProducts notice: ${failure.message}");
+              emit(CategoryProductsLoaded(
+                categoryProductsResponse: CategoryProductsResponse(
+                  status: 300,
+                  message: failure.message,
+                  products: [],
+                ),
+                categoryFiltersResponse: filtersData,
+                selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+                selectedTagUuId: null,
+                selectedSortBy: null,
+                isProductsLoading: false,
+              ));
             },
             (productsData) {
               emit(CategoryProductsLoaded(
@@ -259,8 +290,20 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
 
     result.fold(
       (failure) {
-        logger.e("📦 CategoryProducts filter error: ${failure.message}");
-        emit(CategoryProductsError(failure.message));
+        logger.w("📦 CategoryProducts filter notice: ${failure.message}");
+        final latestState = state;
+        if (latestState is CategoryProductsLoaded) {
+          emit(latestState.copyWith(
+            categoryProductsResponse: CategoryProductsResponse(
+              status: 300,
+              message: failure.message,
+              products: [],
+            ),
+            isProductsLoading: false,
+          ));
+        } else {
+          emit(CategoryProductsError(failure.message));
+        }
       },
       (newData) {
         // Since state could have updated (e.g. user double clicked), make sure we keep the latest options/selections
