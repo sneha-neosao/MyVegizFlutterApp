@@ -125,273 +125,281 @@ class _LoginScreenState extends State<LoginScreen>
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        body: Stack(
-          children: [
-            // ── Full-screen Background Image ──
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/login_bg.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                gaplessPlayback: true,
-              ),
-            ),
-
-            // ── Bottom Anchored White Sheet ──
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(28.w),
-                        topRight: Radius.circular(28.w),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                height: screenHeight,
+                child: Stack(
+                  children: [
+                    // ── Full-screen Background Image ──
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/login_bg.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        gaplessPlayback: true,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, -4),
-                        ),
-                      ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(28.w),
-                        topRight: Radius.circular(28.w),
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        bottom: false,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 0),
-                              child: Form(
-                                key: _formKey,
+
+                    // ── Bottom Anchored White Sheet ──
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(28.w),
+                                topRight: Radius.circular(28.w),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, -4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(28.w),
+                                topRight: Radius.circular(28.w),
+                              ),
+                              child: SafeArea(
+                                top: false,
+                                bottom: false,
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Header: WELCOME BACK ! 🍃
-                                    Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            'WELCOME BACK !',
-                                            style: TextStyle(
-                                              fontSize: 21.sp,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: -0.3,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          SizedBox(width: 4.w),
-                                          Text(
-                                            '🍃',
-                                            style: TextStyle(fontSize: 15.sp),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: 12.h),
-
-                                    // Mobile Number Label
-                                    Text(
-                                      'Mobile Number',
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey.shade800,
-                                      ),
-                                    ),
-                                    SizedBox(height: 5.h),
-
-                                    // Input Field
-                                    _buildTextField(),
-                                    SizedBox(height: 14.h),
-
-                                    // Get OTP Button
-                                    BlocBuilder<SendOtpBloc, SendOtpState>(
-                                      builder: (context, state) {
-                                        final isLoading = state is SendOtpLoading;
-
-                                        return SizedBox(
-                                          width: double.infinity,
-                                          height: 46.h,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [
-                                                  Color(0xFFFF5722),
-                                                  Color(0xFFFF7A00),
+                                    Padding(
+                                      padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 0),
+                                      child: Form(
+                                        key: _formKey,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Header: WELCOME BACK ! 🍃
+                                            Center(
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    'WELCOME BACK !',
+                                                    style: TextStyle(
+                                                      fontSize: 21.sp,
+                                                      fontWeight: FontWeight.w900,
+                                                      letterSpacing: -0.3,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 4.w),
+                                                  Text(
+                                                    '🍃',
+                                                    style: TextStyle(fontSize: 15.sp),
+                                                  ),
                                                 ],
                                               ),
-                                              borderRadius: BorderRadius.circular(28.w),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: const Color(0xFFFF5722)
-                                                      .withOpacity(0.35),
-                                                  blurRadius: 12,
-                                                  offset: const Offset(0, 4),
-                                                ),
-                                              ],
                                             ),
-                                            child: ElevatedButton(
-                                              onPressed: isLoading
-                                                  ? null
-                                                  : _onGetOtpPressed,
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.transparent,
-                                                shadowColor: Colors.transparent,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(28.w),
-                                                ),
-                                                padding: EdgeInsets.zero,
+                                            SizedBox(height: 12.h),
+
+                                            // Mobile Number Label
+                                            Text(
+                                              'Mobile Number',
+                                              style: TextStyle(
+                                                fontSize: 13.sp,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey.shade800,
                                               ),
-                                              child: isLoading
-                                                  ? const SizedBox(
-                                                      width: 24,
-                                                      height: 24,
-                                                      child: CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                        strokeWidth: 2.5,
+                                            ),
+                                            SizedBox(height: 5.h),
+
+                                            // Input Field
+                                            _buildTextField(),
+                                            SizedBox(height: 14.h),
+
+                                            // Get OTP Button
+                                            BlocBuilder<SendOtpBloc, SendOtpState>(
+                                              builder: (context, state) {
+                                                final isLoading = state is SendOtpLoading;
+
+                                                return SizedBox(
+                                                  width: double.infinity,
+                                                  height: 46.h,
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      gradient: const LinearGradient(
+                                                        colors: [
+                                                          Color(0xFFFF5722),
+                                                          Color(0xFFFF7A00),
+                                                        ],
                                                       ),
-                                                    )
-                                                  : Stack(
-                                                      alignment: Alignment.center,
-                                                      children: [
-                                                        Center(
-                                                          child: Text(
-                                                            'Get OTP',
-                                                            style: TextStyle(
-                                                              fontSize: 15.sp,
-                                                              fontWeight: FontWeight.w700,
-                                                              color: Colors.white,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        Positioned(
-                                                          right: 8.w,
-                                                          child: Container(
-                                                            width: 32.w,
-                                                            height: 32.w,
-                                                            decoration: const BoxDecoration(
-                                                              color: Colors.white,
-                                                              shape: BoxShape.circle,
-                                                            ),
-                                                            child: Icon(
-                                                              Icons.arrow_forward_rounded,
-                                                              color: const Color(0xFFFF5722),
-                                                              size: 17.w,
-                                                            ),
-                                                          ),
+                                                      borderRadius: BorderRadius.circular(28.w),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: const Color(0xFFFF5722)
+                                                              .withOpacity(0.35),
+                                                          blurRadius: 12,
+                                                          offset: const Offset(0, 4),
                                                         ),
                                                       ],
                                                     ),
+                                                    child: ElevatedButton(
+                                                      onPressed: isLoading
+                                                          ? null
+                                                          : _onGetOtpPressed,
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.transparent,
+                                                        shadowColor: Colors.transparent,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(28.w),
+                                                        ),
+                                                        padding: EdgeInsets.zero,
+                                                      ),
+                                                      child: isLoading
+                                                          ? const SizedBox(
+                                                              width: 24,
+                                                              height: 24,
+                                                              child: CircularProgressIndicator(
+                                                                color: Colors.white,
+                                                                strokeWidth: 2.5,
+                                                              ),
+                                                            )
+                                                          : Stack(
+                                                              alignment: Alignment.center,
+                                                              children: [
+                                                                Center(
+                                                                  child: Text(
+                                                                    'Get OTP',
+                                                                    style: TextStyle(
+                                                                      fontSize: 15.sp,
+                                                                      fontWeight: FontWeight.w700,
+                                                                      color: Colors.white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                Positioned(
+                                                                  right: 8.w,
+                                                                  child: Container(
+                                                                    width: 32.w,
+                                                                    height: 32.w,
+                                                                    decoration: const BoxDecoration(
+                                                                      color: Colors.white,
+                                                                      shape: BoxShape.circle,
+                                                                    ),
+                                                                    child: Icon(
+                                                                      Icons.arrow_forward_rounded,
+                                                                      color: const Color(0xFFFF5722),
+                                                                      size: 17.w,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    ),
 
-                                    SizedBox(height: 10.h),
+                                            SizedBox(height: 10.h),
 
-                                    // OR Divider
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Divider(
-                                            color: Colors.grey.shade300,
-                                            thickness: 0.8,
-                                          ),
-                                        ),
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                                          child: Text(
-                                            'OR',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade500,
-                                              fontSize: 11.5.sp,
-                                              fontWeight: FontWeight.w600,
+                                            // OR Divider
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Divider(
+                                                    color: Colors.grey.shade300,
+                                                    thickness: 0.8,
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                                  child: Text(
+                                                    'OR',
+                                                    style: TextStyle(
+                                                      color: Colors.grey.shade500,
+                                                      fontSize: 11.5.sp,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Divider(
+                                                    color: Colors.grey.shade300,
+                                                    thickness: 0.8,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Divider(
-                                            color: Colors.grey.shade300,
-                                            thickness: 0.8,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
 
-                                    SizedBox(height: 8.h),
+                                            SizedBox(height: 8.h),
 
-                                    // Don't have account? Sign Up
-                                    Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            "Don't have account? ",
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
-                                              fontSize: 12.5.sp,
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              logger.i('🔐 LoginScreen: "Sign Up" tapped — navigating to signup');
-                                              context.push(AppRoutePath.signup);
-                                            },
-                                            child: Text(
-                                              'Sign Up',
-                                              style: TextStyle(
-                                                color: const Color(0xFFFF5722),
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12.5.sp,
+                                            // Don't have account? Sign Up
+                                            Center(
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    "Don't have account? ",
+                                                    style: TextStyle(
+                                                      color: Colors.grey.shade700,
+                                                      fontSize: 12.5.sp,
+                                                    ),
+                                                  ),
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      logger.i('🔐 LoginScreen: "Sign Up" tapped — navigating to signup');
+                                                      context.push(AppRoutePath.signup);
+                                                    },
+                                                    child: Text(
+                                                      'Sign Up',
+                                                      style: TextStyle(
+                                                        color: const Color(0xFFFF5722),
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 12.5.sp,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
+                                    ),
+                                    Image.asset(
+                                      'assets/images/bottom_img.png',
+                                      width: double.infinity,
+                                      fit: BoxFit.fitWidth,
+                                      gaplessPlayback: true,
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                            Image.asset(
-                              'assets/images/bottom_img.png',
-                              width: double.infinity,
-                              fit: BoxFit.fitWidth,
-                              gaplessPlayback: true,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildTextField() {
     return TextFormField(

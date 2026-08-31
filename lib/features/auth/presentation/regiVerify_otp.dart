@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
+import '../../home/presentation/pages/home_page.dart';
 import '../../../routes/app_route_path.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/responsive_utils.dart';
@@ -47,6 +49,9 @@ class _OtpScreenState extends State<RegiverifyOtp>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
+  Timer? _timer;
+  int _secondsRemaining = 60;
+  bool _isResending = false;
   bool isLoading = false;
 
   @override
@@ -60,6 +65,7 @@ class _OtpScreenState extends State<RegiverifyOtp>
   void initState() {
     super.initState();
     FocusManager.instance.primaryFocus?.unfocus();
+    _startTimer();
 
     _animationController = AnimationController(
       vsync: this,
@@ -83,8 +89,25 @@ class _OtpScreenState extends State<RegiverifyOtp>
     _animationController.forward();
   }
 
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _secondsRemaining = 60;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     _animationController.dispose();
     pinController.dispose();
     pinFocusNode.dispose();
@@ -126,13 +149,23 @@ class _OtpScreenState extends State<RegiverifyOtp>
           listener: (context, state) {
             if (state is RegisterLoading) {
               logger.i('🔐 RegiVerifyOtp: Resending registration OTP to ${widget.mobile}...');
+              setState(() {
+                _isResending = true;
+              });
             }
             if (state is RegisterSuccess) {
               logger.i('✅ RegiVerifyOtp: Registration OTP resent successfully!');
+              setState(() {
+                _isResending = false;
+              });
+              _startTimer();
               SnackbarUtils.showSuccessSnackbar(context, state.message);
             }
             if (state is RegisterFailure) {
               logger.e('❌ RegiVerifyOtp: Registration OTP resend failed — ${state.error}');
+              setState(() {
+                _isResending = false;
+              });
               SnackbarUtils.showErrorSnackbar(context, state.error);
             }
           },
@@ -170,6 +203,7 @@ class _OtpScreenState extends State<RegiverifyOtp>
                       context,
                       state.model.message,
                     );
+                    HomePage.resetLocationSheetFlag();
                     context.go(AppRoutePath.home);
                   }
                 }
@@ -186,29 +220,34 @@ class _OtpScreenState extends State<RegiverifyOtp>
       ],
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        body: Stack(
-          children: [
-            // ── Full-screen Background Image ──
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/login_bg.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                gaplessPlayback: true,
-              ),
-            ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                height: screenHeight,
+                child: Stack(
+                  children: [
+                    // ── Full-screen Background Image ──
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/login_bg.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        gaplessPlayback: true,
+                      ),
+                    ),
 
-            // ── Bottom Anchored White Sheet ──
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Container(
+                    // ── Bottom Anchored White Sheet ──
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -448,53 +487,106 @@ class _OtpScreenState extends State<RegiverifyOtp>
 
                                   // RESEND OPTIONS
                                   Center(
-                                    child: RichText(
-                                      text: TextSpan(
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 13.5.sp,
-                                          fontFamily:
-                                              GoogleFonts.nunito().fontFamily,
-                                        ),
-                                        children: [
-                                          const TextSpan(
-                                            text: "Didn't receive OTP? ",
-                                          ),
-                                          TextSpan(
-                                            text: "Resend",
-                                            style: TextStyle(
-                                              color: const Color(0xFFFF5722),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13.5.sp,
-                                            ),
-                                            recognizer: TapGestureRecognizer()
-                                              ..onTap = _onResend,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    child: _isResending
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 14.w,
+                                                height: 14.w,
+                                                child: const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Color(0xFFFF5722),
+                                                ),
+                                              ),
+                                              SizedBox(width: 8.w),
+                                              Text(
+                                                'Resending OTP...',
+                                                style: TextStyle(
+                                                  color: const Color(0xFFFF5722),
+                                                  fontSize: 13.5.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontFamily:
+                                                      GoogleFonts.nunito().fontFamily,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : _secondsRemaining > 0
+                                            ? RichText(
+                                                text: TextSpan(
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 13.5.sp,
+                                                    fontFamily:
+                                                        GoogleFonts.nunito().fontFamily,
+                                                  ),
+                                                  children: [
+                                                    const TextSpan(
+                                                      text: "Resend OTP in ",
+                                                    ),
+                                                    TextSpan(
+                                                      text: "00:${_secondsRemaining.toString().padLeft(2, '0')}",
+                                                      style: const TextStyle(
+                                                        color: Color(0xFFFF5722),
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : RichText(
+                                                text: TextSpan(
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 13.5.sp,
+                                                    fontFamily:
+                                                        GoogleFonts.nunito().fontFamily,
+                                                  ),
+                                                  children: [
+                                                    const TextSpan(
+                                                      text: "Didn't receive OTP? ",
+                                                    ),
+                                                    TextSpan(
+                                                      text: "Resend",
+                                                      style: TextStyle(
+                                                        color: const Color(0xFFFF5722),
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 13.5.sp,
+                                                      ),
+                                                      recognizer: TapGestureRecognizer()
+                                                        ..onTap = _isResending
+                                                            ? null
+                                                            : _onResend,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                   ),
                                 ],
                               ),
                             ),
-                            Image.asset(
-                              'assets/images/bottom_img.png',
-                              width: double.infinity,
-                              fit: BoxFit.fitWidth,
-                              gaplessPlayback: true,
+                                    Image.asset(
+                                      'assets/images/bottom_img.png',
+                                      width: double.infinity,
+                                      fit: BoxFit.fitWidth,
+                                      gaplessPlayback: true,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

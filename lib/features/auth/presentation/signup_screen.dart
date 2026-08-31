@@ -122,29 +122,34 @@ class _SignupScreenState extends State<SignupScreen>
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        body: Stack(
-          children: [
-            // ── Full-screen Background Image ──
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/signup_bg.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                gaplessPlayback: true,
-              ),
-            ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                height: screenHeight,
+                child: Stack(
+                  children: [
+                    // ── Full-screen Background Image ──
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/signup_bg.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        gaplessPlayback: true,
+                      ),
+                    ),
 
-            // ── Bottom Anchored White Sheet ──
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Container(
+                    // ── Bottom Anchored White Sheet ──
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -380,26 +385,29 @@ class _SignupScreenState extends State<SignupScreen>
                                 ),
                               ),
                             ),
-                            Image.asset(
-                              'assets/images/bottom_img.png',
-                              width: double.infinity,
-                              fit: BoxFit.fitWidth,
-                              gaplessPlayback: true,
+                                    Image.asset(
+                                      'assets/images/bottom_img.png',
+                                      width: double.infinity,
+                                      fit: BoxFit.fitWidth,
+                                      gaplessPlayback: true,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildField({
     required TextEditingController controller,

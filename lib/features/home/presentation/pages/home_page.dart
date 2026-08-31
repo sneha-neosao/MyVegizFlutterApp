@@ -55,6 +55,10 @@ class HomePage extends StatefulWidget {
     this.isFood = false,
   });
 
+  static void resetLocationSheetFlag() {
+    _HomePageState._hasShownSwiggySheetThisLaunch = false;
+  }
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -311,28 +315,26 @@ class _HomePageState extends State<HomePage> {
     final savedLocation = await locationService.loadSavedLocation();
     if (savedLocation != null) {
       _fetchAllHomeData(savedLocation.lat, savedLocation.lng);
-
-      // On app re-open, show the Swiggy-style confirmation sheet once
-      if (!_hasShownSwiggySheetThisLaunch && mounted) {
-        _hasShownSwiggySheetThisLaunch = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            SwiggyLocationSheet.show(context);
-          }
-        });
+    } else {
+      // 2. Check if in-memory location exists
+      final inMemoryLoc = locationService.locationNotifier.value;
+      if (inMemoryLoc != null) {
+        _fetchAllHomeData(inMemoryLoc.lat, inMemoryLoc.lng);
+      } else {
+        // 3. First login / fresh launch: fetch device GPS location
+        await _initLocation();
       }
-      return;
     }
 
-    // 2. Check if in-memory location exists
-    final inMemoryLoc = locationService.locationNotifier.value;
-    if (inMemoryLoc != null) {
-      _fetchAllHomeData(inMemoryLoc.lat, inMemoryLoc.lng);
-      return;
+    // Show the location selection sheet on landing / launch
+    if (!_hasShownSwiggySheetThisLaunch && mounted) {
+      _hasShownSwiggySheetThisLaunch = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          SwiggyLocationSheet.show(context);
+        }
+      });
     }
-
-    // 3. First login / fresh launch: fetch device GPS location
-    await _initLocation();
   }
 
   /// 🔥 NEW: Real-time listener

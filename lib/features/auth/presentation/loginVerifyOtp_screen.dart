@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
+import '../../home/presentation/pages/home_page.dart';
 import '../../../routes/app_route_path.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/responsive_utils.dart';
@@ -39,6 +41,10 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
   final TextEditingController pinController = TextEditingController();
   final FocusNode pinFocusNode = FocusNode();
 
+  Timer? _timer;
+  int _secondsRemaining = 60;
+  bool _isResending = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -50,6 +56,7 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
   void initState() {
     super.initState();
     FocusManager.instance.primaryFocus?.unfocus();
+    _startTimer();
 
     _controller = AnimationController(
       vsync: this,
@@ -68,8 +75,25 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
     _controller.forward();
   }
 
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _secondsRemaining = 60;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     pinController.dispose();
     pinFocusNode.dispose();
     _controller.dispose();
@@ -88,13 +112,23 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
           listener: (context, state) {
             if (state is SendOtpLoading) {
               logger.i('🔐 LoginVerifyOtp: Resending OTP to ${widget.mobile}...');
+              setState(() {
+                _isResending = true;
+              });
             }
             if (state is SendOtpSuccess) {
               logger.i('✅ LoginVerifyOtp: OTP resent successfully!');
+              setState(() {
+                _isResending = false;
+              });
+              _startTimer();
               SnackbarUtils.showSuccessSnackbar(context, state.message);
             }
             if (state is SendOtpFailure) {
               logger.e('❌ LoginVerifyOtp: OTP resend failed — ${state.error}');
+              setState(() {
+                _isResending = false;
+              });
               SnackbarUtils.showErrorSnackbar(context, state.error);
             }
           },
@@ -122,6 +156,7 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
                   if (context.mounted) {
                     context.read<WishlistBloc>().add(FetchWishlist());
                     context.read<AddressBloc>().add(FetchAddressList());
+                    HomePage.resetLocationSheetFlag();
                     context.go(AppRoutePath.home);
                   }
                 }
@@ -138,29 +173,34 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
       ],
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        body: Stack(
-          children: [
-            // ── Full-screen Background Image ──
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/login_bg.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                gaplessPlayback: true,
-              ),
-            ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                height: screenHeight,
+                child: Stack(
+                  children: [
+                    // ── Full-screen Background Image ──
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/login_bg.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        gaplessPlayback: true,
+                      ),
+                    ),
 
-            // ── Bottom Anchored White Sheet ──
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: SlideTransition(
-                  position: _slide,
-                  child: FadeTransition(
-                    opacity: _fade,
-                    child: Container(
+                    // ── Bottom Anchored White Sheet ──
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SlideTransition(
+                        position: _slide,
+                        child: FadeTransition(
+                          opacity: _fade,
+                          child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -429,62 +469,113 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
 
                                   // RESEND OPTIONS
                                   Center(
-                                    child: RichText(
-                                      text: TextSpan(
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 13.5.sp,
-                                          fontFamily:
-                                              GoogleFonts.nunito().fontFamily,
-                                        ),
-                                        children: [
-                                          const TextSpan(
-                                            text: "Didn't receive OTP? ",
-                                          ),
-                                          TextSpan(
-                                            text: "Resend",
-                                            style: TextStyle(
-                                              color: const Color(0xFFFF5722),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13.5.sp,
-                                            ),
-                                            recognizer: TapGestureRecognizer()
-                                              ..onTap = () {
-                                                logger.i(
-                                                  '📱 LoginVerifyOtp: Resending OTP to ${widget.mobile}',
-                                                );
-                                                context.read<SendOtpBloc>().add(
-                                                      SendOtpButtonPressed(
-                                                        widget.mobile,
+                                    child: _isResending
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 14.w,
+                                                height: 14.w,
+                                                child: const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Color(0xFFFF5722),
+                                                ),
+                                              ),
+                                              SizedBox(width: 8.w),
+                                              Text(
+                                                'Resending OTP...',
+                                                style: TextStyle(
+                                                  color: const Color(0xFFFF5722),
+                                                  fontSize: 13.5.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontFamily:
+                                                      GoogleFonts.nunito().fontFamily,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : _secondsRemaining > 0
+                                            ? RichText(
+                                                text: TextSpan(
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 13.5.sp,
+                                                    fontFamily:
+                                                        GoogleFonts.nunito().fontFamily,
+                                                  ),
+                                                  children: [
+                                                    const TextSpan(
+                                                      text: "Resend OTP in ",
+                                                    ),
+                                                    TextSpan(
+                                                      text: "00:${_secondsRemaining.toString().padLeft(2, '0')}",
+                                                      style: const TextStyle(
+                                                        color: Color(0xFFFF5722),
+                                                        fontWeight: FontWeight.bold,
                                                       ),
-                                                    );
-                                              },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : RichText(
+                                                text: TextSpan(
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 13.5.sp,
+                                                    fontFamily:
+                                                        GoogleFonts.nunito().fontFamily,
+                                                  ),
+                                                  children: [
+                                                    const TextSpan(
+                                                      text: "Didn't receive OTP? ",
+                                                    ),
+                                                    TextSpan(
+                                                      text: "Resend",
+                                                      style: TextStyle(
+                                                        color: const Color(0xFFFF5722),
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 13.5.sp,
+                                                      ),
+                                                      recognizer: TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          logger.i(
+                                                            '📱 LoginVerifyOtp: Resending OTP to ${widget.mobile}',
+                                                          );
+                                                          context.read<SendOtpBloc>().add(
+                                                                SendOtpButtonPressed(
+                                                                  widget.mobile,
+                                                                ),
+                                                              );
+                                                        },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                   ),
                                 ],
                               ),
                             ),
-                            Image.asset(
-                              'assets/images/bottom_img.png',
-                              width: double.infinity,
-                              fit: BoxFit.fitWidth,
-                              gaplessPlayback: true,
+                                    Image.asset(
+                                      'assets/images/bottom_img.png',
+                                      width: double.infinity,
+                                      fit: BoxFit.fitWidth,
+                                      gaplessPlayback: true,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
