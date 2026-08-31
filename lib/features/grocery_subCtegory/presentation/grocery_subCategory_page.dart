@@ -143,15 +143,11 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
       slivers.addAll(widget.topSlivers!);
     }
 
-    // Pinned sticky header for category cards
-    if (widget.pinnedHeader != null && widget.pinnedHeaderHeight != null) {
+    // Header for category cards & ongoing order
+    if (widget.pinnedHeader != null) {
       slivers.add(
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _StickyCategoryCardsHeaderDelegate(
-            child: widget.pinnedHeader!,
-            height: widget.pinnedHeaderHeight!,
-          ),
+        SliverToBoxAdapter(
+          child: widget.pinnedHeader!,
         ),
       );
     }

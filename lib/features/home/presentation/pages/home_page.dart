@@ -43,6 +43,8 @@ import 'package:my_vegiz_flutter/features/profile/domain/usecase/profile_usecase
 import 'package:my_vegiz_flutter/core/utils/profile_image_notifier.dart';
 import 'package:my_vegiz_flutter/features/address/presentation/widgets/swiggy_location_sheet.dart';
 import '../../../grocery_category/presentation/grocery_category_page.dart';
+import 'package:my_vegiz_flutter/features/orders/bloc/order_bloc.dart';
+import 'package:my_vegiz_flutter/features/orders/bloc/order_event.dart';
 import '../../../food_category/presentation/food_category_page.dart';
 import 'package:my_vegiz_flutter/features/cart/bloc/cart_bloc.dart';
 import 'package:my_vegiz_flutter/features/cart/bloc/cart_event.dart';
@@ -552,6 +554,8 @@ class _HomePageState extends State<HomePage> {
           getIt<CartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
           // Food cart
           getIt<FoodCartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
+          // Ongoing active orders
+          getIt<GroceryOrderBloc>().add(const FetchTodayActiveOrdersEvent(page: 1, limit: 5));
         }
       },
       child: isNotServiceable
