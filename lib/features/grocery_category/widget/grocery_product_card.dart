@@ -425,11 +425,13 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
 
                           final isMultiVariant = widget.variants.length > 1;
                           int multiQty = 0;
+                          List<CartItem> matchingCartItems = [];
                           if (isMultiVariant) {
                             if (isCartStateAvailable && cartData.items != null) {
                               final variantIds = widget.variants.map((v) => v.id).toSet();
                               for (final item in cartData.items!) {
                                 if (variantIds.contains(item.productVariantId)) {
+                                  matchingCartItems.add(item);
                                   multiQty += item.quantity;
                                 }
                               }
@@ -466,6 +468,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                                 isMultiVariant: isMultiVariant,
                                 displayQty: displayQty,
                                 cartItem: cartItem,
+                                matchingCartItems: matchingCartItems,
                                 hasAnyDeliverable: hasAnyDeliverable,
                               ),
                             ],
@@ -676,6 +679,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
     required bool isMultiVariant,
     required int displayQty,
     required CartItem? cartItem,
+    required List<CartItem> matchingCartItems,
     required bool hasAnyDeliverable,
   }) {
     if (!hasAnyDeliverable) {
@@ -704,6 +708,9 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
 
     // In Cart: Glossy green stepper button
     if (displayQty > 0) {
+      final bool isSingleVariantInCart = isMultiVariant && matchingCartItems.length == 1;
+      final CartItem? singleAddedCartItem = isSingleVariantInCart ? matchingCartItems.first : null;
+
       return Container(
         width: 76.w,
         height: 36.h,
@@ -725,135 +732,153 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
             ),
           ],
         ),
-        child: isMultiVariant
-            ? GestureDetector(
-                onTap: () {
-                  final loc = locationService.locationNotifier.value;
-                  _showVariantBottomSheet(context, loc?.lat ?? 0.0, loc?.lng ?? 0.0);
-                },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Icon(Icons.remove, color: Colors.white, size: 16),
-                      Text(
-                        '$displayQty',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                      const Icon(Icons.add, color: Colors.white, size: 16),
-                    ],
+        child: _loading
+            ? Center(
+                child: SizedBox(
+                  width: 13.w,
+                  height: 13.w,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    strokeCap: StrokeCap.round,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
               )
-            : (_loading
-                ? Center(
-                    child: SizedBox(
-                      width: 13.w,
-                      height: 13.w,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        strokeCap: StrokeCap.round,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          final loc = locationService.locationNotifier.value;
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Minus Button
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      final loc = locationService.locationNotifier.value;
+                      if (isMultiVariant) {
+                        if (isSingleVariantInCart && singleAddedCartItem != null) {
+                          // Only 1 variant in cart -> directly update/remove cart without opening bottom sheet
                           setState(() => _loading = true);
-                          if (cartItem != null) {
-                            if (cartItem.quantity > 1) {
-                              context.read<CartBloc>().add(
-                                UpdateCartEvent(
-                                  cartItemId: cartItem.id,
-                                  quantity: cartItem.quantity - 1,
-                                  lat: loc?.lat ?? 0.0,
-                                  lng: loc?.lng ?? 0.0,
-                                ),
-                              );
-                            } else {
-                              context.read<CartBloc>().add(
-                                RemoveCartItemEvent(cartItem.id),
-                              );
-                            }
-                          } else if (displayQty > 1 && variantId != null) {
+                          if (singleAddedCartItem.quantity > 1) {
                             context.read<CartBloc>().add(
-                              AddToCartEvent(
-                                productVariantId: variantId,
-                                quantity: displayQty - 1,
-                                lat: loc?.lat ?? 0.0,
-                                lng: loc?.lng ?? 0.0,
-                              ),
-                            );
-                          } else if (displayQty == 1 && variantId != null) {
-                            context.read<CartBloc>().add(
-                              AddToCartEvent(
-                                productVariantId: variantId,
-                                quantity: 0,
+                              UpdateCartEvent(
+                                cartItemId: singleAddedCartItem.id,
+                                quantity: singleAddedCartItem.quantity - 1,
                                 lat: loc?.lat ?? 0.0,
                                 lng: loc?.lng ?? 0.0,
                               ),
                             );
                           } else {
-                            setState(() => _loading = false);
+                            context.read<CartBloc>().add(
+                              RemoveCartItemEvent(singleAddedCartItem.id),
+                            );
                           }
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                          child: const Icon(Icons.remove, color: Colors.white, size: 16),
-                        ),
-                      ),
-                      Text(
-                        '$displayQty',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          final loc = locationService.locationNotifier.value;
-                          setState(() => _loading = true);
-                          if (cartItem != null) {
+                        } else {
+                          // More than 1 distinct variant in cart -> open bottom sheet to let user choose
+                          _showVariantBottomSheet(context, loc?.lat ?? 0.0, loc?.lng ?? 0.0);
+                        }
+                      } else {
+                        // Single variant product
+                        setState(() => _loading = true);
+                        if (cartItem != null) {
+                          if (cartItem.quantity > 1) {
                             context.read<CartBloc>().add(
                               UpdateCartEvent(
                                 cartItemId: cartItem.id,
-                                quantity: cartItem.quantity + 1,
-                                lat: loc?.lat ?? 0.0,
-                                lng: loc?.lng ?? 0.0,
-                              ),
-                            );
-                          } else if (variantId != null) {
-                            context.read<CartBloc>().add(
-                              AddToCartEvent(
-                                productVariantId: variantId,
-                                quantity: displayQty + 1,
+                                quantity: cartItem.quantity - 1,
                                 lat: loc?.lat ?? 0.0,
                                 lng: loc?.lng ?? 0.0,
                               ),
                             );
                           } else {
-                            setState(() => _loading = false);
+                            context.read<CartBloc>().add(
+                              RemoveCartItemEvent(cartItem.id),
+                            );
                           }
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                          child: const Icon(Icons.add, color: Colors.white, size: 16),
-                        ),
+                        } else if (displayQty > 1 && variantId != null) {
+                          context.read<CartBloc>().add(
+                            AddToCartEvent(
+                              productVariantId: variantId,
+                              quantity: displayQty - 1,
+                              lat: loc?.lat ?? 0.0,
+                              lng: loc?.lng ?? 0.0,
+                            ),
+                          );
+                        } else if (displayQty == 1 && variantId != null) {
+                          context.read<CartBloc>().add(
+                            AddToCartEvent(
+                              productVariantId: variantId,
+                              quantity: 0,
+                              lat: loc?.lat ?? 0.0,
+                              lng: loc?.lng ?? 0.0,
+                            ),
+                          );
+                        } else {
+                          setState(() => _loading = false);
+                        }
+                      }
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                      child: const Icon(Icons.remove, color: Colors.white, size: 16),
+                    ),
+                  ),
+
+                  // Middle Count
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: isMultiVariant
+                        ? () {
+                            final loc = locationService.locationNotifier.value;
+                            _showVariantBottomSheet(context, loc?.lat ?? 0.0, loc?.lng ?? 0.0);
+                          }
+                        : null,
+                    child: Text(
+                      '$displayQty',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14.sp,
                       ),
-                    ],
-                  )),
+                    ),
+                  ),
+
+                  // Plus Button
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      final loc = locationService.locationNotifier.value;
+                      if (isMultiVariant) {
+                        _showVariantBottomSheet(context, loc?.lat ?? 0.0, loc?.lng ?? 0.0);
+                      } else {
+                        setState(() => _loading = true);
+                        if (cartItem != null) {
+                          context.read<CartBloc>().add(
+                            UpdateCartEvent(
+                              cartItemId: cartItem.id,
+                              quantity: cartItem.quantity + 1,
+                              lat: loc?.lat ?? 0.0,
+                              lng: loc?.lng ?? 0.0,
+                            ),
+                          );
+                        } else if (variantId != null) {
+                          context.read<CartBloc>().add(
+                            AddToCartEvent(
+                              productVariantId: variantId,
+                              quantity: displayQty + 1,
+                              lat: loc?.lat ?? 0.0,
+                              lng: loc?.lng ?? 0.0,
+                            ),
+                          );
+                        } else {
+                          setState(() => _loading = false);
+                        }
+                      }
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                      child: const Icon(Icons.add, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ],
+              ),
       );
     }
 
@@ -1130,31 +1155,62 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                   children: [
                     // Product Title Header
                     Padding(
-                      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 12.h),
-                      child: Text(
-                        widget.productName,
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1E293B),
-                          letterSpacing: -0.3,
-                        ),
+                      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.productName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1E293B),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            'Select an option (${widget.variants.length} available)',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
-                    // Variant List
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
-                        itemCount: widget.variants.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 10.h),
-                        itemBuilder: (context, index) {
-                          final variant = widget.variants[index];
-                          return _buildVariantCard(context, variant, cartData);
+                    // Horizontal Variant Cards List (2 cards visible at once)
+                    SizedBox(
+                      height: 188.h,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          // Width calculated so 2 cards fit with 16.w outer padding and 12.w gap
+                          final double cardWidth = (screenWidth - 32.w - 12.w) / 2;
+
+                          return ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
+                            itemCount: widget.variants.length,
+                            separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                            itemBuilder: (context, index) {
+                              final variant = widget.variants[index];
+                              return SizedBox(
+                                width: cardWidth,
+                                child: _buildVariantCard(context, variant, cartData),
+                              );
+                            },
+                          );
                         },
                       ),
                     ),
+
+                    SizedBox(height: 10.h),
 
                     // Floating View Cart Bar if items exist in cart
                     if (hasCartItems)
@@ -1206,34 +1262,33 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
     final bool isLoading = vid != null && _loadingMap[vid] == true;
 
     return Container(
-      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16.w),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        borderRadius: BorderRadius.circular(14.w),
+        border: Border.all(color: Colors.grey.shade200, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left: Product image thumbnail with blue discount badge
+          // Top: Product image thumbnail with discount badge
           Stack(
-            clipBehavior: Clip.none,
             children: [
               Container(
-                width: 64.w,
-                height: 64.w,
+                height: 82.h,
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.w),
-                  color: const Color(0xFFF8FAF9),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(13.w)),
+                  color: const Color(0xFFF9FAFB),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.w),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(13.w)),
                   child: Image.network(
                     widget.productImage.startsWith('http')
                         ? widget.productImage
@@ -1244,7 +1299,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                       child: Icon(
                         Icons.eco_rounded,
                         color: Colors.green.shade300,
-                        size: 28.w,
+                        size: 32.w,
                       ),
                     ),
                   ),
@@ -1255,261 +1310,262 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                   top: 0,
                   left: 0,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1565C0),
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12.w),
+                        topLeft: Radius.circular(13.w),
                         bottomRight: Radius.circular(8.w),
                       ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$discountPct%',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 8.5.sp,
-                            fontWeight: FontWeight.w900,
-                            height: 1.0,
-                          ),
-                        ),
-                        Text(
-                          'OFF',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 7.5.sp,
-                            fontWeight: FontWeight.w800,
-                            height: 1.0,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '$discountPct% OFF',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
-          SizedBox(width: 14.w),
 
-          // Middle: Variant Name / Weight (e.g. 2 x 200 g or 200 g)
-          Expanded(
-            child: Text(
-              vLabel.isNotEmpty ? vLabel : '1 unit',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
-              ),
-            ),
-          ),
-
-          // Pricing (₹67 ₹85)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '₹${sellingPrice.toInt()}',
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1E293B),
-                ),
-              ),
-              if (actualPrice > sellingPrice) ...[
-                SizedBox(width: 4.w),
+          // Bottom: Details + Pricing + Action Button
+          Padding(
+            padding: EdgeInsets.fromLTRB(8.w, 6.h, 8.w, 8.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Variant Label / Quantity
                 Text(
-                  '₹${actualPrice.toInt()}',
+                  vLabel.isNotEmpty ? vLabel : '1 unit',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11.5.sp,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w500,
-                    decoration: TextDecoration.lineThrough,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
-              ],
-            ],
-          ),
-          SizedBox(width: 12.w),
+                SizedBox(height: 3.h),
 
-          // Right: ADD / Stepper Button
-          if (!variant.isDeliverable)
-            Container(
-              width: 76.w,
-              height: 32.h,
-              alignment: Alignment.center,
-              padding: EdgeInsets.symmetric(horizontal: 4.w),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEEF0),
-                borderRadius: BorderRadius.circular(8.w),
-                border: Border.all(color: const Color(0xFFFFD2D7)),
-              ),
-              child: Text(
-                'Not deliverable',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: const Color(0xFFC62828),
-                  fontSize: 8.5.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          else if (inCart)
-            Container(
-              width: 76.w,
-              height: 32.h,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(8.w),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2E7D32).withValues(alpha: 0.3),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: isLoading
-                    ? SizedBox(
-                        width: 13.w,
-                        height: 13.w,
-                        child: const CircularProgressIndicator(
-                          strokeWidth: 2,
-                          strokeCap: StrokeCap.round,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                // Pricing
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '₹${sellingPrice.toInt()}',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                    if (actualPrice > sellingPrice) ...[
+                      SizedBox(width: 4.w),
+                      Text(
+                        '₹${actualPrice.toInt()}',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Colors.grey.shade400,
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.lineThrough,
                         ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 8.h),
+
+                // ADD / Stepper Button (Full Width of the card)
+                  if (!variant.isDeliverable)
+                    Container(
+                      width: double.infinity,
+                      height: 28.h,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEEF0),
+                        borderRadius: BorderRadius.circular(8.w),
+                        border: Border.all(color: const Color(0xFFFFD2D7)),
+                      ),
+                      child: Text(
+                        'Not deliverable',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: const Color(0xFFC62828),
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  else if (inCart)
+                    Container(
+                      width: double.infinity,
+                      height: 28.h,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(8.w),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2E7D32).withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: isLoading
+                            ? SizedBox(
+                                width: 12.w,
+                                height: 12.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  strokeCap: StrokeCap.round,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      if (vid == null) return;
+                                      setState(() => _loadingMap[vid] = true);
+                                      if (cartItem != null) {
+                                        if (cartItem.quantity > 1) {
+                                          context.read<CartBloc>().add(
+                                            UpdateCartEvent(
+                                              cartItemId: cartItem.id,
+                                              quantity: cartItem.quantity - 1,
+                                              lat: widget.lat,
+                                              lng: widget.lng,
+                                            ),
+                                          );
+                                        } else {
+                                          context.read<CartBloc>().add(
+                                            RemoveCartItemEvent(cartItem.id),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                      child: const Icon(Icons.remove, color: Colors.white, size: 16),
+                                    ),
+                                  ),
+                                  Text(
+                                    '$qty',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12.5.sp,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      if (vid == null) return;
+                                      setState(() => _loadingMap[vid] = true);
+                                      if (cartItem != null) {
+                                        context.read<CartBloc>().add(
+                                          UpdateCartEvent(
+                                            cartItemId: cartItem.id,
+                                            quantity: cartItem.quantity + 1,
+                                            lat: widget.lat,
+                                            lng: widget.lng,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                      child: const Icon(Icons.add, color: Colors.white, size: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: isLoading
+                          ? null
+                          : () {
                               if (vid == null) return;
                               setState(() => _loadingMap[vid] = true);
-                              if (cartItem != null) {
-                                if (cartItem.quantity > 1) {
+                              CartValidationHelper.checkAndShowConflictDialog(
+                                context,
+                                isAddingFood: false,
+                                onClearAndAdd: () {
                                   context.read<CartBloc>().add(
-                                    UpdateCartEvent(
-                                      cartItemId: cartItem.id,
-                                      quantity: cartItem.quantity - 1,
+                                    AddToCartEvent(
+                                      productVariantId: vid,
+                                      quantity: 1,
                                       lat: widget.lat,
                                       lng: widget.lng,
                                     ),
                                   );
-                                } else {
-                                  context.read<CartBloc>().add(
-                                    RemoveCartItemEvent(cartItem.id),
-                                  );
+                                },
+                              ).then((success) {
+                                if (!success && mounted) {
+                                  setState(() => _loadingMap[vid] = false);
                                 }
-                              }
+                              });
                             },
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                              child: const Icon(Icons.remove, color: Colors.white, size: 16),
+                      child: Container(
+                        width: double.infinity,
+                        height: 28.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.w),
+                          border: Border.all(color: const Color(0xFF2E7D32), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2E7D32).withValues(alpha: 0.06),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
-                          Text(
-                            '$qty',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13.sp,
-                            ),
-                          ),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              if (vid == null) return;
-                              setState(() => _loadingMap[vid] = true);
-                              if (cartItem != null) {
-                                context.read<CartBloc>().add(
-                                  UpdateCartEvent(
-                                    cartItemId: cartItem.id,
-                                    quantity: cartItem.quantity + 1,
-                                    lat: widget.lat,
-                                    lng: widget.lng,
-                                  ),
-                                );
-                              }
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                              child: const Icon(Icons.add, color: Colors.white, size: 16),
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            )
-          else
-            GestureDetector(
-              onTap: isLoading
-                  ? null
-                  : () {
-                      if (vid == null) return;
-                      setState(() => _loadingMap[vid] = true);
-                      CartValidationHelper.checkAndShowConflictDialog(
-                        context,
-                        isAddingFood: false,
-                        onClearAndAdd: () {
-                          context.read<CartBloc>().add(
-                            AddToCartEvent(
-                              productVariantId: vid,
-                              quantity: 1,
-                              lat: widget.lat,
-                              lng: widget.lng,
-                            ),
-                          );
-                        },
-                      ).then((success) {
-                        if (!success && mounted) {
-                          setState(() => _loadingMap[vid] = false);
-                        }
-                      });
-                    },
-              child: Container(
-                width: 76.w,
-                height: 32.h,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8.w),
-                  border: Border.all(color: const Color(0xFF2E7D32), width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2E7D32).withValues(alpha: 0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: isLoading
-                      ? SizedBox(
-                          width: 13.w,
-                          height: 13.w,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            strokeCap: StrokeCap.round,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
-                          ),
-                        )
-                      : Text(
-                          'ADD',
-                          style: TextStyle(
-                            color: const Color(0xFF2E7D32),
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
+                          ],
                         ),
-                ),
+                        child: Center(
+                          child: isLoading
+                              ? SizedBox(
+                                  width: 12.w,
+                                  height: 12.w,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    strokeCap: StrokeCap.round,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'ADD',
+                                      style: TextStyle(
+                                        color: const Color(0xFF2E7D32),
+                                        fontSize: 11.5.sp,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Icon(Icons.add, size: 14.w, color: const Color(0xFF2E7D32)),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
         ],
