@@ -5,6 +5,7 @@ import '../../../../core/errors/failures.dart';
 import '../datasources/verifyOtp_datasource.dart';
 import '../models/verifyOtp_model.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/utils/profile_image_notifier.dart';
 
 abstract class VerifyOtpRepository {
   Future<Either<Failure, VerifyOtpModel>> verifyOtp(String mobile, String otp);
@@ -37,6 +38,13 @@ class VerifyOtpRepositoryImpl implements VerifyOtpRepository {
           await SecureStorage.saveCustomerContact(res.data!.customer.contact);
           await SecureStorage.saveCustomerEmail(res.data!.customer.email);
           await SecureStorage.saveCustomerUuid(res.data!.customer.uuId);
+          if (res.data!.customer.profileImage != null &&
+              res.data!.customer.profileImage!.isNotEmpty) {
+            await SecureStorage.saveCustomerProfileImage(
+              res.data!.customer.profileImage!,
+            );
+            profileImageNotifier.value = res.data!.customer.profileImage!;
+          }
         }
         return Right(res);
       } else {

@@ -15,6 +15,7 @@ import '../../../../core/utils/profile_image_notifier.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../bloc/profile_blocs/profile_event.dart';
 import '../../bloc/profile_blocs/profile_state.dart';
+import '../../domain/usecase/profile_usecases.dart';
 import '../../../orders/data/repository/grocery_order_repo.dart';
 import '../../../orders/data/models/order_model.dart';
 import '../../../orders/data/repository/food_order_repo.dart';
@@ -60,6 +61,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = await SecureStorage.getCustomerName();
     final email = await SecureStorage.getCustomerEmail();
     final contact = await SecureStorage.getCustomerContact();
+    final image = await SecureStorage.getCustomerProfileImage();
+
+    if (image != null && image.isNotEmpty) {
+      profileImageNotifier.value = image;
+    } else if (name != null && name.isNotEmpty && contact != null && contact.isNotEmpty) {
+      _syncProfileImage(name: name, email: email ?? '', contact: contact);
+    }
 
     if (mounted) {
       setState(() {
@@ -68,7 +76,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _contact = contact ?? "";
         _isUserLoading = false;
       });
-      logger.d("👤 ProfileScreen: User data loaded for $_name");
+      logger.d("👤 ProfileScreen: User data loaded for $_name, image=$image");
+    }
+  }
+
+  Future<void> _syncProfileImage({
+    required String name,
+    required String email,
+    required String contact,
+  }) async {
+    try {
+      final res = await getIt<UpdateProfileUseCase>()(
+        name: name,
+        email: email,
+        contact: contact,
+      );
+      res.fold((_) {}, (profile) async {
+        if (profile.profileImage != null && profile.profileImage!.isNotEmpty) {
+          profileImageNotifier.value = profile.profileImage;
+          await SecureStorage.saveCustomerProfileImage(profile.profileImage!);
+        }
+      });
+    } catch (e) {
+      logger.d('Profile sync error in ProfileScreen: $e');
     }
   }
 

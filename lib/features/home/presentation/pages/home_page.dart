@@ -39,6 +39,8 @@ import 'package:my_vegiz_flutter/core/api/api/api_helper.dart';
 import 'package:my_vegiz_flutter/core/api/api/api_url.dart';
 import 'package:my_vegiz_flutter/core/models/app_update_model.dart';
 import 'package:my_vegiz_flutter/config/injector_conf.dart';
+import 'package:my_vegiz_flutter/features/profile/domain/usecase/profile_usecases.dart';
+import 'package:my_vegiz_flutter/core/utils/profile_image_notifier.dart';
 import 'package:my_vegiz_flutter/features/address/presentation/widgets/swiggy_location_sheet.dart';
 import '../../../grocery_category/presentation/grocery_category_page.dart';
 import '../../../food_category/presentation/food_category_page.dart';
@@ -78,9 +80,42 @@ class _HomePageState extends State<HomePage> {
 
     _updateFirebaseToken();
     _checkAppUpdate();
+    _syncProfileImageIfEmpty();
 
     _startLocationInitialization();
     _listenLocationService();
+  }
+
+  Future<void> _syncProfileImageIfEmpty() async {
+    try {
+      final image = await SecureStorage.getCustomerProfileImage();
+      if (image != null && image.isNotEmpty) {
+        if (profileImageNotifier.value != image) {
+          profileImageNotifier.value = image;
+        }
+        return;
+      }
+
+      final name = await SecureStorage.getCustomerName();
+      final contact = await SecureStorage.getCustomerContact();
+      final email = await SecureStorage.getCustomerEmail();
+
+      if (name != null && name.isNotEmpty && contact != null && contact.isNotEmpty) {
+        final res = await getIt<UpdateProfileUseCase>()(
+          name: name,
+          email: email ?? '',
+          contact: contact,
+        );
+        res.fold((_) {}, (profile) async {
+          if (profile.profileImage != null && profile.profileImage!.isNotEmpty) {
+            profileImageNotifier.value = profile.profileImage;
+            await SecureStorage.saveCustomerProfileImage(profile.profileImage!);
+          }
+        });
+      }
+    } catch (e) {
+      logger.d('Profile sync error: $e');
+    }
   }
 
   Future<void> _updateFirebaseToken() async {

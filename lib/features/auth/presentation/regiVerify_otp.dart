@@ -23,6 +23,7 @@ import '../../address/bloc/address_event.dart';
 import '../../wishlist/bloc/wishlist_bloc.dart';
 import '../../wishlist/bloc/wishlist_event.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/utils/profile_image_notifier.dart';
 
 class RegiverifyOtp extends StatefulWidget {
   final String name;
@@ -187,6 +188,13 @@ class _OtpScreenState extends State<RegiverifyOtp>
                   await SecureStorage.saveCustomerContact(data.customer.contact);
                   await SecureStorage.saveCustomerEmail(data.customer.email ?? '');
                   await SecureStorage.saveCustomerUuid(data.customer.uuId);
+                  if (data.customer.profileImage != null &&
+                      data.customer.profileImage!.isNotEmpty) {
+                    await SecureStorage.saveCustomerProfileImage(
+                      data.customer.profileImage!,
+                    );
+                    profileImageNotifier.value = data.customer.profileImage!;
+                  }
 
                   // Update FCM Token on server
                   NoficationService.updateTokenOnServer();

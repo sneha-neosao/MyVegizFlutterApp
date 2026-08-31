@@ -90,7 +90,9 @@ class _EditProfileSheetState extends State<_EditProfile>
       end: 0.92,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut));
 
-    final path = widget.initialImagePath;
+    final path = (widget.initialImagePath != null && widget.initialImagePath!.isNotEmpty)
+        ? widget.initialImagePath
+        : profileImageNotifier.value;
     if (path != null && path.isNotEmpty) {
       if (path.startsWith('http')) {
         _remoteImageUrl = path;

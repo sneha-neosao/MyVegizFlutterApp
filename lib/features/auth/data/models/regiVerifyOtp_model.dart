@@ -69,6 +69,7 @@ class Customer {
   String name;
   String email;
   String contact;
+  String? profileImage;
   bool isActive;
 
   Customer({
@@ -77,6 +78,7 @@ class Customer {
     required this.name,
     required this.email,
     required this.contact,
+    this.profileImage,
     required this.isActive,
   });
 
@@ -86,6 +88,7 @@ class Customer {
     name: json["name"] ?? "",
     email: json["email"] ?? "",
     contact: json["contact"] ?? "",
+    profileImage: json["profile_image"] ?? json["profileImage"],
     isActive: json["is_active"] ?? false,
   );
 
@@ -95,6 +98,7 @@ class Customer {
     "name": name,
     "email": email,
     "contact": contact,
+    if (profileImage != null) "profile_image": profileImage,
     "is_active": isActive,
   };
 }

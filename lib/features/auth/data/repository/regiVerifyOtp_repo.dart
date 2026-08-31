@@ -5,6 +5,7 @@ import '../../../../core/errors/failures.dart';
 import '../datasources/regiVerifyOtp_datasource.dart';
 import '../models/regiVerifyOtp_model.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/utils/profile_image_notifier.dart';
 
 
 abstract class RegiVerifyOtpRepository {
@@ -37,6 +38,13 @@ class RegiVerifyOtpRepositoryImpl implements RegiVerifyOtpRepository {
           await SecureStorage.saveCustomerContact(result.data!.customer.contact);
           await SecureStorage.saveCustomerEmail(result.data!.customer.email);
           await SecureStorage.saveCustomerUuid(result.data!.customer.uuId);
+          if (result.data!.customer.profileImage != null &&
+              result.data!.customer.profileImage!.isNotEmpty) {
+            await SecureStorage.saveCustomerProfileImage(
+              result.data!.customer.profileImage!,
+            );
+            profileImageNotifier.value = result.data!.customer.profileImage!;
+          }
         }
         return Right(result);
       } else {
