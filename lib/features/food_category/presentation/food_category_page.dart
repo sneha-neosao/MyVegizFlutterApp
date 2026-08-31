@@ -29,6 +29,11 @@ import '../../mainCetegories/bloc/mainCategories_bloc.dart';
 import '../../mainCetegories/bloc/mainCategories_event.dart';
 
 import 'package:my_vegiz_flutter/core/utils/snackbar_utils.dart';
+import 'package:my_vegiz_flutter/core/utils/logger.dart';
+import 'package:my_vegiz_flutter/config/injector_conf.dart';
+import 'package:my_vegiz_flutter/features/cart/bloc/cart_bloc.dart';
+import 'package:my_vegiz_flutter/features/cart/bloc/cart_event.dart';
+import 'package:my_vegiz_flutter/features/cart/bloc/food_cart_bloc.dart';
 import '../../home/presentation/pages/home_page.dart';
 
 class FoodCategoryPage extends StatefulWidget {
@@ -87,6 +92,27 @@ class _FoodCategoryPageState extends State<FoodCategoryPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onRefresh() async {
+    logger.i('🔄 FoodCategoryPage: Pull-to-refresh triggered — refreshing all APIs');
+    final loc = locationService.locationNotifier.value;
+    final lat = loc?.lat ?? 0.0;
+    final lng = loc?.lng ?? 0.0;
+
+    if (widget.isHomeTab) {
+      context.read<MainCategoriesBloc>().add(FetchMainCategories());
+    }
+
+    context.read<VendorBannerBloc>().add(FetchVendorBannersEvent(lat: lat, lng: lng));
+    context.read<VendorEntityCategoryBloc>().add(FetchVendorEntityCategoriesEvent());
+    context.read<VendorHomeSectionBloc>().add(const FetchVendorHomeSectionFiltersEvent());
+    _fetchHomeSections();
+
+    getIt<CartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
+    getIt<FoodCartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
+
+    await Future.delayed(const Duration(milliseconds: 600));
   }
 
   void _fetchHomeSections() {
@@ -360,192 +386,173 @@ class _FoodCategoryPageState extends State<FoodCategoryPage> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async {
-            final loc = locationService.locationNotifier.value;
-            if (widget.isHomeTab) {
-              context.read<MainCategoriesBloc>().add(FetchMainCategories());
-            }
-            context.read<VendorBannerBloc>().add(
-              FetchVendorBannersEvent(lat: loc?.lat ?? 0.0, lng: loc?.lng ?? 0.0),
-            );
-            context.read<VendorEntityCategoryBloc>().add(
-              FetchVendorEntityCategoriesEvent(forceRefresh: true),
-            );
-            context.read<VendorHomeSectionBloc>().add(
-              const FetchVendorHomeSectionFiltersEvent(),
-            );
-            _fetchHomeSections();
-            await Future.delayed(const Duration(milliseconds: 800));
-            if (mounted) {
-              setState(() {});
-            }
-          },
+          onRefresh: _onRefresh,
           child: Builder(
             builder: (context) {
-                final bannerState = context.watch<VendorBannerBloc>().state;
-                final categoryState = context.watch<VendorEntityCategoryBloc>().state;
-                final homeSectionState = context.watch<VendorHomeSectionBloc>().state;
+              final bannerState = context.watch<VendorBannerBloc>().state;
+              final categoryState = context.watch<VendorEntityCategoryBloc>().state;
+              final homeSectionState = context.watch<VendorHomeSectionBloc>().state;
 
-                final bool isLoading = (bannerState.isBannersLoading && bannerState.banners.isEmpty) ||
-                                       (categoryState.isCategoriesLoading && categoryState.categories.isEmpty) ||
-                                       homeSectionState.isHomeSectionsLoading;
+              final bool isLoading = (bannerState.isBannersLoading && bannerState.banners.isEmpty) ||
+                                     (categoryState.isCategoriesLoading && categoryState.categories.isEmpty) ||
+                                     homeSectionState.isHomeSectionsLoading;
 
-                if (isLoading) {
-                  return const FoodCategoryShimmer();
-                }
+              if (isLoading) {
+                return const FoodCategoryShimmer();
+              }
 
-                // --- Error state ---
-                if (homeSectionState.homeSectionsError != null) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 32.w,
-                        vertical: 80.h,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.wifi_off_rounded,
-                            size: 56.w,
-                            color: Colors.grey.shade400,
-                          ),
-                          SizedBox(height: 16.h),
-                          Text(
-                            'Unable to load content',
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            homeSectionState.homeSectionsError!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          SizedBox(height: 24.h),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              context.read<VendorHomeSectionBloc>().add(
-                                const FetchVendorHomeSectionFiltersEvent(),
-                              );
-                              _fetchHomeSections();
-                            },
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Try Again'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFC8019),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.w),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 24.w,
-                                vertical: 12.h,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+              // --- Error state ---
+              if (homeSectionState.homeSectionsError != null) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 32.w,
+                      vertical: 80.h,
                     ),
-                  );
-                }
-
-                // Dynamic section builder
-                final List<Widget> dynamicSections = [];
-                
-                for (var section in homeSectionState.homeSections) {
-                  if (section.isActive != true) continue;
-
-                  if (section.sectionType == 'banner') {
-                    if (_searchQuery.isEmpty) {
-                      dynamicSections.add(SwiggyPromoBanner(banners: section.banners ?? []));
-                    }
-                  } else if (section.sectionType == 'vendorItem') {
-                    var items = section.vendorItems ?? [];
-                    if (_searchQuery.isNotEmpty) {
-                      items = items
-                          .where(
-                            (item) => (item.itemName ?? '')
-                                .toLowerCase()
-                                .contains(_searchQuery.toLowerCase()),
-                          )
-                          .toList();
-                    }
-                    if (_activeFilter != 'all') {
-                      items = items.where((item) {
-                        final cType = item.cuisineType?.toLowerCase().trim();
-                        if (_activeFilter == 'veg') {
-                          return cType == 'veg';
-                        } else if (_activeFilter == 'nonveg') {
-                          return cType == 'nonveg' || cType == 'non-veg';
-                        }
-                        return true;
-                      }).toList();
-                    }
-                    if (items.isNotEmpty) {
-                      dynamicSections.add(RecommendedFoodsSection(
-                        items: items,
-                        title: section.title ?? 'Recommended Foods',
-                        description: section.description ?? 'Best Items',
-                      ));
-                    }
-                  } else if (section.sectionType == 'vendor') {
-                    var vendors = section.vendors ?? [];
-                    if (_searchQuery.isNotEmpty) {
-                      vendors = vendors
-                          .where(
-                            (v) => (v.entityName ?? '').toLowerCase().contains(
-                              _searchQuery.toLowerCase(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.wifi_off_rounded,
+                          size: 56.w,
+                          color: Colors.grey.shade400,
+                        ),
+                        SizedBox(height: 16.h),
+                        Text(
+                          'Unable to load content',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          homeSectionState.homeSectionsError!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            context.read<VendorHomeSectionBloc>().add(
+                              const FetchVendorHomeSectionFiltersEvent(),
+                            );
+                            _fetchHomeSections();
+                          },
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Try Again'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFC8019),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.w),
                             ),
-                          )
-                          .toList();
-                    }
-                    if (_activeFilter != 'all') {
-                      vendors = vendors.where((v) {
-                        final hasVegItems =
-                            (v.foodType?.toLowerCase() == 'veg' ||
-                            v.foodType?.toLowerCase() == 'both');
-                        final hasNonVegItems =
-                            (v.foodType?.toLowerCase() == 'nonveg' ||
-                            v.foodType?.toLowerCase() == 'non-veg' ||
-                            v.foodType?.toLowerCase() == 'both');
-                        if (_activeFilter == 'veg') return hasVegItems;
-                        if (_activeFilter == 'nonveg') return hasNonVegItems;
-                        return true;
-                      }).toList();
-                    }
-                    if (vendors.isNotEmpty) {
-                      dynamicSections.add(HomeSectionVendorList(
-                        vendors: vendors,
-                        title: section.title ?? 'Top Restaurants',
-                        description: section.description,
-                      ));
-                    }
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.w,
+                              vertical: 12.h,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Dynamic section builder
+              final List<Widget> dynamicSections = [];
+              
+              for (var section in homeSectionState.homeSections) {
+                if (section.isActive != true) continue;
+
+                if (section.sectionType == 'banner') {
+                  if (_searchQuery.isEmpty) {
+                    dynamicSections.add(SwiggyPromoBanner(banners: section.banners ?? []));
+                  }
+                } else if (section.sectionType == 'vendorItem') {
+                  var items = section.vendorItems ?? [];
+                  if (_searchQuery.isNotEmpty) {
+                    items = items
+                        .where(
+                          (item) => (item.itemName ?? '')
+                              .toLowerCase()
+                              .contains(_searchQuery.toLowerCase()),
+                        )
+                        .toList();
+                  }
+                  if (_activeFilter != 'all') {
+                    items = items.where((item) {
+                      final cType = item.cuisineType?.toLowerCase().trim();
+                      if (_activeFilter == 'veg') {
+                        return cType == 'veg';
+                      } else if (_activeFilter == 'nonveg') {
+                        return cType == 'nonveg' || cType == 'non-veg';
+                      }
+                      return true;
+                    }).toList();
+                  }
+                  if (items.isNotEmpty) {
+                    dynamicSections.add(RecommendedFoodsSection(
+                      items: items,
+                      title: section.title ?? 'Recommended Foods',
+                      description: section.description ?? 'Best Items',
+                    ));
+                  }
+                } else if (section.sectionType == 'vendor') {
+                  var vendors = section.vendors ?? [];
+                  if (_searchQuery.isNotEmpty) {
+                    vendors = vendors
+                        .where(
+                          (v) => (v.entityName ?? '').toLowerCase().contains(
+                            _searchQuery.toLowerCase(),
+                          ),
+                        )
+                        .toList();
+                  }
+                  if (_activeFilter != 'all') {
+                    vendors = vendors.where((v) {
+                      final hasVegItems =
+                          (v.foodType?.toLowerCase() == 'veg' ||
+                          v.foodType?.toLowerCase() == 'both');
+                      final hasNonVegItems =
+                          (v.foodType?.toLowerCase() == 'nonveg' ||
+                          v.foodType?.toLowerCase() == 'non-veg' ||
+                          v.foodType?.toLowerCase() == 'both');
+                      if (_activeFilter == 'veg') return hasVegItems;
+                      if (_activeFilter == 'nonveg') return hasNonVegItems;
+                      return true;
+                    }).toList();
+                  }
+                  if (vendors.isNotEmpty) {
+                    dynamicSections.add(HomeSectionVendorList(
+                      vendors: vendors,
+                      title: section.title ?? 'Top Restaurants',
+                      description: section.description,
+                    ));
                   }
                 }
+              }
 
-                final bool isAnythingVisible =
-                    categoryState.categories.any((cat) => cat.isActive == true) ||
-                    dynamicSections.isNotEmpty;
+              final bool isAnythingVisible =
+                  categoryState.categories.any((cat) => cat.isActive == true) ||
+                  dynamicSections.isNotEmpty;
 
-                if (_searchQuery.isNotEmpty && !isAnythingVisible) {
-                  return SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: EmptySearchState(query: _searchQuery),
-                  );
-                }
-
+              if (_searchQuery.isNotEmpty && !isAnythingVisible) {
                 return SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  child: EmptySearchState(query: _searchQuery),
+                );
+              }
+
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     SizedBox(height: 8.h),
 
                     // Dynamic Vendor Entity Categories (from API) - "What's in your mind?"

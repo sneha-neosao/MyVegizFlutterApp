@@ -25,7 +25,7 @@ class _GroceryBannerSliderState extends State<GroceryBannerSlider> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.84, initialPage: 0);
+    _pageController = PageController(viewportFraction: 1.0, initialPage: 0);
     _startAutoScroll();
   }
 
@@ -84,62 +84,42 @@ class _GroceryBannerSliderState extends State<GroceryBannerSlider> {
             itemCount: widget.banners.length,
             itemBuilder: (context, idx) {
               final banner = widget.banners[idx];
-              return AnimatedBuilder(
-                animation: _pageController,
-                builder: (context, child) {
-                  double scale = 1.0;
-                  if (_pageController.position.haveDimensions) {
-                    final double page = _pageController.page ?? _currentPage.toDouble();
-                    final double diff = (page - idx).abs();
-                    scale = (1.0 - (diff * 0.12)).clamp(0.88, 1.0);
-                  } else {
-                    scale = idx == _currentPage ? 1.0 : 0.88;
+              return GestureDetector(
+                onTap: () {
+                  if (banner.product?.slug != null) {
+                    final product = banner.product!;
+                    context.push(
+                      AppRoutePath.productDetails,
+                      extra: {
+                        'slug': product.slug,
+                        'variantId': product.variants?.firstOrNull?.id,
+                      },
+                    );
                   }
-
-                  return Center(
-                    child: Transform.scale(
-                      scale: scale,
-                      child: child,
-                    ),
-                  );
                 },
-                child: GestureDetector(
-                  onTap: () {
-                    if (banner.product?.slug != null) {
-                      final product = banner.product!;
-                      context.push(
-                        AppRoutePath.productDetails,
-                        extra: {
-                          'slug': product.slug,
-                          'variantId': product.variants?.firstOrNull?.id,
-                        },
-                      );
-                    }
-                  },
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18.w),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: banner.image != null && banner.image!.isNotEmpty
-                        ? Image.network(
-                            banner.image!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const ColoredBox(color: Colors.grey),
-                          )
-                        : const ColoredBox(color: Colors.grey),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18.w),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  clipBehavior: Clip.antiAlias,
+                  child: banner.image != null && banner.image!.isNotEmpty
+                      ? Image.network(
+                          banner.image!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const ColoredBox(color: Colors.grey),
+                        )
+                      : const ColoredBox(color: Colors.grey),
                 ),
               );
             },

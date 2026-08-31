@@ -470,18 +470,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _onRefresh() async {
-    // logger.i(
-    //   '🔄 HomePage: Pull-to-refresh triggered — refreshing main categories',
-    // );
+    logger.i('🔄 HomePage: Pull-to-refresh triggered');
     final loc = locationService.locationNotifier.value;
+    final lat = loc?.lat ?? 0.0;
+    final lng = loc?.lng ?? 0.0;
     final grocerySlug = _resolveGrocerySlug(context);
+
+    // Refresh HomePageBloc. The BlocListener will automatically
+    // refresh MainCategories, EntityCategory, GroceryCategory, and Cart Blocs once on HomePageLoaded.
     context.read<HomePageBloc>().add(
       FetchHomePageData(
         mainCategorySlug: grocerySlug,
-        lat: loc?.lat ?? 0.0,
-        lng: loc?.lng ?? 0.0,
+        lat: lat,
+        lng: lng,
       ),
     );
+
     // Wait for the primary check (HomePageBloc)
     await context.read<HomePageBloc>().stream.firstWhere(
       (state) => state is! HomePageLoading,
@@ -526,13 +530,16 @@ class _HomePageState extends State<HomePage> {
                   SystemNavigator.pop();
                 }
               },
-              child: const Scaffold(
+              child: Scaffold(
                 backgroundColor: Colors.white,
-                appBar: CustomHomeAppBar(
+                appBar: const CustomHomeAppBar(
                   showSearch: false,
                 ),
-                body: _NotServiceableBody(),
-                bottomNavigationBar: CustomBottomNavBar(currentIndex: 0),
+                body: RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  child: const _NotServiceableBody(),
+                ),
+                bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
               ),
             )
           : Builder(

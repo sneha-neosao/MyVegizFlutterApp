@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../config/injector_conf.dart';
 import 'package:my_vegiz_flutter/features/grocery_category/widget/grocery_product_card.dart';
-import '../data/models/homePage_model.dart';
+import 'package:my_vegiz_flutter/features/grocery_subCtegory/data/models/homePage_model.dart';
 import '../bloc/categoryProducts/category_products_bloc.dart';
 import '../bloc/categoryProducts/category_products_event.dart';
 import '../bloc/categoryProducts/category_products_state.dart';
@@ -269,7 +269,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
   Widget _buildSectionHeader(String title) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 8.h),
+        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 6.h),
         child: Text(
           title,
           style: TextStyle(
@@ -285,7 +285,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
 
   Widget _buildCategoryGrid(List<CategoryModel> categories) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
@@ -421,7 +421,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
               (screenWidth - (horizontalPadding * 2) - (itemSpacing * 2)) / 3;
 
           return SizedBox(
-            height: 242.h,
+            height: 202.h,
             child: ListView.separated(
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
               scrollDirection: Axis.horizontal,

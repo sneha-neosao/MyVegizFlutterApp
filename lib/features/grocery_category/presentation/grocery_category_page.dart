@@ -17,12 +17,8 @@ import '../../grocery_subCtegory/bloc/homePage/homePage_event.dart';
 import '../../grocery_subCtegory/bloc/homePage/homePage_state.dart';
 import '../../grocery_subCtegory/bloc/categoryProducts/category_products_bloc.dart';
 import '../../grocery_subCtegory/bloc/categoryProducts/category_products_event.dart';
-import '../../mainCetegories/bloc/mainCategories_bloc.dart';
-import '../../mainCetegories/bloc/mainCategories_event.dart';
 import '../../../core/utils/responsive_utils.dart';
-
 import '../../food_category/widget/veg_nonveg_filter.dart';
-import 'package:my_vegiz_flutter/features/cart/data/cart_data.dart';
 
 class GroceryCategoryPage extends StatefulWidget {
   final String? initialTabSlug;
@@ -91,10 +87,8 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
 
   Future<void> _onRefresh() async {
     logger.i('🔄 GroceryCategoryPage: Pull-to-refresh triggered');
-    if (widget.isHomeTab) {
-      context.read<MainCategoriesBloc>().add(FetchMainCategories());
-    }
     _fetchData();
+
     await context.read<HomePageBloc>().stream.firstWhere(
       (state) => state is! HomePageLoading,
     );
@@ -109,7 +103,53 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
           if (state is HomePageLoading || state is HomePageInitial) {
             return _buildGroceryShimmer();
           } else if (state is HomePageError) {
-            return Center(child: Text('Error: ${state.message}'));
+            return RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.wifi_off_rounded,
+                            size: 48.w,
+                            color: Colors.grey.shade400,
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            'Error: ${state.message}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+                          ElevatedButton(
+                            onPressed: _onRefresh,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFC8019),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.w),
+                              ),
+                            ),
+                            child: const Text(
+                              'Try Again',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
           } else if (state is HomePageLoaded) {
             final rawTabs = state.homePageModel.data?.homeTabs ?? [];
 
