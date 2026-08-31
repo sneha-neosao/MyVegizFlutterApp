@@ -1,4 +1,4 @@
-package com.example.my_vegiz_flutter
+package com.nsdelivery.customer
 
 import io.flutter.embedding.android.FlutterActivity
 

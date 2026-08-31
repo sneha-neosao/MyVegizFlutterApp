@@ -3,6 +3,7 @@ import 'package:my_vegiz_flutter/features/productDetails/data/repository/product
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../core/api/api/api_helper.dart';
+import '../core/services/firebase_auth_service.dart';
 import '../features/auth/bloc/login_blocs/login_bloc/sendOtp_bloc.dart';
 import '../features/auth/bloc/login_blocs/verifyOtp_bloc/verifyOtp_bloc.dart';
 import '../features/auth/bloc/signup_blocs/regiVerifyOtp_blocs/regiVerifyOtp_bloc.dart';
@@ -121,6 +122,8 @@ void configureDependencies() {
 
   getIt.registerLazySingleton<ApiHelper>(() => ApiHelper(getIt<Dio>()));
 
+  getIt.registerLazySingleton<FirebaseAuthService>(() => FirebaseAuthService());
+
   /// DATASOURCE
   getIt.registerLazySingleton<SendOtpRemoteDataSource>(
     () => SendOtpRemoteDataSource(getIt<ApiHelper>()),
@@ -138,7 +141,7 @@ void configureDependencies() {
 
   /// BLOC
   getIt.registerFactory<SendOtpBloc>(
-    () => SendOtpBloc(getIt<SendOtpUseCase>()),
+    () => SendOtpBloc(getIt<SendOtpUseCase>(), getIt<FirebaseAuthService>()),
   );
   // ----------------------------------------
   ///verify_otp
@@ -152,7 +155,9 @@ void configureDependencies() {
 
   getIt.registerLazySingleton(() => VerifyOtpUseCase(getIt()));
 
-  getIt.registerFactory(() => VerifyOtpBloc(getIt()));
+  getIt.registerFactory(
+    () => VerifyOtpBloc(getIt(), getIt<FirebaseAuthService>()),
+  );
   //---------------------------------------
   /// register (sign up)
   getIt.registerLazySingleton<RegisterRemoteDataSource>(
@@ -165,7 +170,9 @@ void configureDependencies() {
 
   getIt.registerLazySingleton(() => RegisterUseCase(getIt()));
 
-  getIt.registerFactory(() => RegisterBloc(getIt()));
+  getIt.registerFactory(
+    () => RegisterBloc(getIt(), getIt<FirebaseAuthService>()),
+  );
   //---------------------------------------
   /// regi Verify Otp
   getIt.registerLazySingleton<RegiVerifyOtpDataSource>(
@@ -178,7 +185,9 @@ void configureDependencies() {
 
   getIt.registerLazySingleton(() => RegiVerifyOtpUseCase(getIt()));
 
-  getIt.registerFactory(() => RegiVerifyOtpBloc(getIt()));
+  getIt.registerFactory(
+    () => RegiVerifyOtpBloc(getIt(), getIt<FirebaseAuthService>()),
+  );
 
   /// Main Categories
   getIt.registerLazySingleton<MainCategoriesRemoteDataSource>(

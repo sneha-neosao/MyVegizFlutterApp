@@ -26,8 +26,15 @@ import '../../../core/utils/profile_image_notifier.dart';
 
 class LoginVerifyOtpScreen extends StatefulWidget {
   final String mobile;
+  final String? verificationId;
+  final int? resendToken;
 
-  const LoginVerifyOtpScreen({super.key, required this.mobile});
+  const LoginVerifyOtpScreen({
+    super.key,
+    required this.mobile,
+    this.verificationId,
+    this.resendToken,
+  });
 
   @override
   State<LoginVerifyOtpScreen> createState() => _OtpScreenState();
@@ -45,6 +52,8 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
   Timer? _timer;
   int _secondsRemaining = 60;
   bool _isResending = false;
+  late String _verificationId;
+  int? _resendToken;
 
   @override
   void didChangeDependencies() {
@@ -56,6 +65,8 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
   @override
   void initState() {
     super.initState();
+    _verificationId = widget.verificationId ?? '';
+    _resendToken = widget.resendToken;
     FocusManager.instance.primaryFocus?.unfocus();
     _startTimer();
 
@@ -118,9 +129,15 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
               });
             }
             if (state is SendOtpSuccess) {
-              logger.i('✅ LoginVerifyOtp: OTP resent successfully!');
+              logger.i('✅ LoginVerifyOtp: OTP resent successfully! [vId: ${state.verificationId}]');
               setState(() {
                 _isResending = false;
+                if (state.verificationId != null && state.verificationId!.isNotEmpty) {
+                  _verificationId = state.verificationId!;
+                }
+                if (state.resendToken != null) {
+                  _resendToken = state.resendToken;
+                }
               });
               _startTimer();
               SnackbarUtils.showSuccessSnackbar(context, state.message);
@@ -402,14 +419,16 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
                                                       );
                                                       return;
                                                     }
-                                                    context
-                                                        .read<VerifyOtpBloc>()
-                                                        .add(
-                                                          VerifyOtpPressed(
-                                                            widget.mobile,
-                                                            otp,
-                                                          ),
-                                                        );
+                                                     context
+                                                         .read<VerifyOtpBloc>()
+                                                         .add(
+                                                           VerifyOtpPressed(
+                                                             widget.mobile,
+                                                             otp,
+                                                             verificationId:
+                                                                 _verificationId,
+                                                           ),
+                                                         );
                                                   },
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
@@ -549,11 +568,13 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
                                                           logger.i(
                                                             '📱 LoginVerifyOtp: Resending OTP to ${widget.mobile}',
                                                           );
-                                                          context.read<SendOtpBloc>().add(
-                                                                SendOtpButtonPressed(
-                                                                  widget.mobile,
-                                                                ),
-                                                              );
+                                                           context.read<SendOtpBloc>().add(
+                                                                 SendOtpButtonPressed(
+                                                                   widget.mobile,
+                                                                   resendToken:
+                                                                       _resendToken,
+                                                                 ),
+                                                               );
                                                         },
                                                     ),
                                                   ],

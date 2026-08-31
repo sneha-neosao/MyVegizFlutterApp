@@ -105,9 +105,16 @@ class _LoginScreenState extends State<LoginScreen>
           FocusScope.of(context).unfocus();
           final mobile = mobileController.text.trim();
           logger.i(
-            '✅ LoginScreen: OTP sent successfully to $mobile — navigating to OTP screen',
+            '✅ LoginScreen: OTP sent successfully to $mobile [vId: ${state.verificationId}] — navigating to OTP screen',
           );
-          context.push(AppRoutePath.otp, extra: mobile);
+          context.push(
+            AppRoutePath.otp,
+            extra: {
+              'mobile': mobile,
+              'verificationId': state.verificationId ?? '',
+              'resendToken': state.resendToken,
+            },
+          );
         }
 
         if (state is SendOtpFailure) {

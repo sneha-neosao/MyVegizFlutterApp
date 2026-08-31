@@ -29,12 +29,16 @@ class RegiverifyOtp extends StatefulWidget {
   final String name;
   final String email;
   final String mobile;
+  final String? verificationId;
+  final int? resendToken;
 
   const RegiverifyOtp({
     super.key,
     required this.name,
     required this.email,
     required this.mobile,
+    this.verificationId,
+    this.resendToken,
   });
 
   @override
@@ -54,6 +58,8 @@ class _OtpScreenState extends State<RegiverifyOtp>
   int _secondsRemaining = 60;
   bool _isResending = false;
   bool isLoading = false;
+  late String _verificationId;
+  int? _resendToken;
 
   @override
   void didChangeDependencies() {
@@ -65,6 +71,8 @@ class _OtpScreenState extends State<RegiverifyOtp>
   @override
   void initState() {
     super.initState();
+    _verificationId = widget.verificationId ?? '';
+    _resendToken = widget.resendToken;
     FocusManager.instance.primaryFocus?.unfocus();
     _startTimer();
 
@@ -127,7 +135,11 @@ class _OtpScreenState extends State<RegiverifyOtp>
     }
 
     context.read<RegiVerifyOtpBloc>().add(
-      RegiVerifyOtpPressed(mobile: widget.mobile, otp: otp),
+      RegiVerifyOtpPressed(
+        mobile: widget.mobile,
+        otp: otp,
+        verificationId: _verificationId,
+      ),
     );
   }
 
@@ -138,6 +150,7 @@ class _OtpScreenState extends State<RegiverifyOtp>
         name: widget.name,
         email: widget.email,
         mobile: widget.mobile,
+        resendToken: _resendToken,
       ),
     );
   }
@@ -155,9 +168,15 @@ class _OtpScreenState extends State<RegiverifyOtp>
               });
             }
             if (state is RegisterSuccess) {
-              logger.i('✅ RegiVerifyOtp: Registration OTP resent successfully!');
+              logger.i('✅ RegiVerifyOtp: Registration OTP resent successfully! [vId: ${state.verificationId}]');
               setState(() {
                 _isResending = false;
+                if (state.verificationId != null && state.verificationId!.isNotEmpty) {
+                  _verificationId = state.verificationId!;
+                }
+                if (state.resendToken != null) {
+                  _resendToken = state.resendToken;
+                }
               });
               _startTimer();
               SnackbarUtils.showSuccessSnackbar(context, state.message);

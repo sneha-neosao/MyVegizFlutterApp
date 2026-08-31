@@ -167,6 +167,8 @@ class AppRoutes {
                 name: extra['name'] as String? ?? '',
                 email: extra['email'] as String? ?? '',
                 mobile: extra['mobile'] as String? ?? '',
+                verificationId: extra['verificationId'] as String?,
+                resendToken: extra['resendToken'] as int?,
               ),
             ),
           );
@@ -184,7 +186,19 @@ class AppRoutes {
       GoRoute(
         path: AppRoutePath.otp,
         builder: (context, state) {
-          final mobile = state.extra as String? ?? "";
+          String mobile = '';
+          String? verificationId;
+          int? resendToken;
+
+          if (state.extra is Map<String, dynamic>) {
+            final map = state.extra as Map<String, dynamic>;
+            mobile = map['mobile'] as String? ?? '';
+            verificationId = map['verificationId'] as String?;
+            resendToken = map['resendToken'] as int?;
+          } else if (state.extra is String) {
+            mobile = state.extra as String;
+          }
+
           return _safe(
             MultiBlocProvider(
               providers: [
@@ -195,7 +209,11 @@ class AppRoutes {
                   create: (_) => getIt<SendOtpBloc>(),
                 ),
               ],
-              child: LoginVerifyOtpScreen(mobile: mobile),
+              child: LoginVerifyOtpScreen(
+                mobile: mobile,
+                verificationId: verificationId,
+                resendToken: resendToken,
+              ),
             ),
           );
         },

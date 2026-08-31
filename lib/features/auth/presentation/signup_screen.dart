@@ -112,7 +112,13 @@ class _SignupScreenState extends State<SignupScreen>
           );
           context.push(
             AppRoutePath.regiVerifyOtp,
-            extra: {'name': name, 'email': email, 'mobile': mobile},
+            extra: {
+              'name': name,
+              'email': email,
+              'mobile': mobile,
+              'verificationId': state.verificationId ?? '',
+              'resendToken': state.resendToken,
+            },
           );
         }
         if (state is RegisterFailure) {
