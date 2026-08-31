@@ -24,6 +24,9 @@ class GrocerySubCategoryPage extends StatefulWidget {
   final String? initialCategorySlug;
   final String searchQuery;
   final String activeFilter;
+  final List<Widget>? topSlivers;
+  final Widget? pinnedHeader;
+  final double? pinnedHeaderHeight;
 
   const GrocerySubCategoryPage({
     super.key,
@@ -32,6 +35,9 @@ class GrocerySubCategoryPage extends StatefulWidget {
     this.initialCategorySlug,
     this.searchQuery = '',
     this.activeFilter = 'all',
+    this.topSlivers,
+    this.pinnedHeader,
+    this.pinnedHeaderHeight,
   });
 
   @override
@@ -106,7 +112,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
     super.build(context);
     final sections = widget.tabData.homeSections ?? [];
 
-    if (sections.isEmpty) {
+    if (sections.isEmpty && (widget.topSlivers == null || widget.topSlivers!.isEmpty)) {
       return const Center(
         child: Text(
           'No specific data for this tab',
@@ -128,6 +134,24 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
   List<Widget> _buildSlivers(List<HomeSectionModel> sections) {
     // This is for the main Category discovery page (when no category is selected)
     final slivers = <Widget>[];
+
+    // Prepend top slivers (e.g. banners)
+    if (widget.topSlivers != null && widget.topSlivers!.isNotEmpty) {
+      slivers.addAll(widget.topSlivers!);
+    }
+
+    // Pinned sticky header for category cards
+    if (widget.pinnedHeader != null && widget.pinnedHeaderHeight != null) {
+      slivers.add(
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _StickyCategoryCardsHeaderDelegate(
+            child: widget.pinnedHeader!,
+            height: widget.pinnedHeaderHeight!,
+          ),
+        ),
+      );
+    }
 
     for (var section in sections) {
       if (section.sectionType == 'banner' &&
@@ -1241,5 +1265,34 @@ class _GrocerySubCategoryProductsPageState
         );
       },
     );
+  }
+}
+
+class _StickyCategoryCardsHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height;
+
+  _StickyCategoryCardsHeaderDelegate({
+    required this.child,
+    required this.height,
+  });
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white,
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyCategoryCardsHeaderDelegate oldDelegate) {
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }

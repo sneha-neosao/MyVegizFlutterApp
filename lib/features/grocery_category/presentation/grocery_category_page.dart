@@ -156,6 +156,55 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
               homeSections: allSections,
             );
 
+            final double cardHeight = 96.h;
+            final double cardSpacing = 8.h;
+            final double verticalPadding = 12.h;
+            final double totalHeaderHeight = cards.isEmpty
+                ? 0.0
+                : (cardHeight * cards.length) +
+                    (cardSpacing * (cards.length - 1)) +
+                    verticalPadding;
+
+            final Widget? pinnedCardsWidget = cards.isNotEmpty
+                ? Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 6.h,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (int i = 0; i < cards.length; i++) ...[
+                          if (i > 0) SizedBox(height: cardSpacing),
+                          SizedBox(
+                            height: cardHeight,
+                            child: _buildCategoryCard(
+                              tab: cards[i],
+                              index: i,
+                              onTap: () {
+                                logger.d(
+                                  '🥦 GroceryCategoryPage: Tapped category card "${cards[i].tabName}" (slug="${cards[i].slug}") -> Opening products page',
+                                );
+                                _navigateToProductsPage(cards[i]);
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  )
+                : null;
+
+            final topSlivers = <Widget>[
+              if (banners.isNotEmpty && _searchQuery.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 4.h, bottom: 6.h),
+                    child: GroceryBannerSlider(banners: banners),
+                  ),
+                ),
+            ];
+
             final scaffold = Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -187,52 +236,15 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
                     });
                   },
                 ),
-                body: Column(
-                  children: [
-                    // 1. Banners UP (at the top)
-                    if (banners.isNotEmpty && _searchQuery.isEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(top: 4.h, bottom: 6.h),
-                        child: GroceryBannerSlider(banners: banners),
-                      ),
-
-                    // 2. Both Category Cards BELOW the banners
-                    if (cards.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 6.h,
-                        ),
-                        child: Column(
-                          children: [
-                            for (int i = 0; i < cards.length; i++) ...[
-                              if (i > 0) SizedBox(height: 10.h),
-                              _buildCategoryCard(
-                                tab: cards[i],
-                                index: i,
-                                onTap: () {
-                                  logger.d(
-                                    '🥦 GroceryCategoryPage: Tapped category card "${cards[i].tabName}" (slug="${cards[i].slug}") -> Opening products page',
-                                  );
-                                  _navigateToProductsPage(cards[i]);
-                                },
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                    // 3. All home sections content below the cards
-                    Expanded(
-                      child: GrocerySubCategoryPage(
-                        tabData: allTabData,
-                        onRefresh: _onRefresh,
-                        searchQuery: _searchQuery,
-                        activeFilter: _activeFilter,
-                        initialCategorySlug: widget.initialCategorySlug,
-                      ),
-                    ),
-                  ],
+                body: GrocerySubCategoryPage(
+                  tabData: allTabData,
+                  topSlivers: topSlivers,
+                  pinnedHeader: pinnedCardsWidget,
+                  pinnedHeaderHeight: cards.isNotEmpty ? totalHeaderHeight : null,
+                  onRefresh: _onRefresh,
+                  searchQuery: _searchQuery,
+                  activeFilter: _activeFilter,
+                  initialCategorySlug: widget.initialCategorySlug,
                 ),
                 bottomNavigationBar: widget.isHomeTab
                     ? const CustomBottomNavBar(currentIndex: 0)
