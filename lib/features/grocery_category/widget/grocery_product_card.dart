@@ -377,9 +377,9 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
 
                     // Integrated Faint Green Weight & Action Bar Container
                     Container(
-                      height: 40.h,
+                      height: 34.h,
                       color: const Color(0xFFF0F7F4),
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
                       child: BlocConsumer<CartBloc, CartState>(
                         listener: (context, state) {
                           if (state is CartActionSuccess ||
@@ -454,8 +454,8 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                                 child: Text(
                                   primaryVariantLabel.isNotEmpty ? primaryVariantLabel : '1 unit',
                                   style: TextStyle(
-                                    fontSize: 12.5.sp,
-                                    fontWeight: FontWeight.w800,
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.w700,
                                     color: const Color(0xFF1E242B),
                                   ),
                                   maxLines: 1,
@@ -687,13 +687,13 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
   }) {
     if (!hasAnyDeliverable) {
       return Container(
-        width: 76.w,
-        height: 36.h,
+        width: 56.w,
+        height: 28.h,
         alignment: Alignment.center,
-        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        padding: EdgeInsets.symmetric(horizontal: 2.w),
         decoration: BoxDecoration(
           color: const Color(0xFFFFEEF0),
-          borderRadius: BorderRadius.circular(10.w),
+          borderRadius: BorderRadius.circular(6.w),
           border: Border.all(color: const Color(0xFFFFD2D7)),
         ),
         child: Text(
@@ -701,7 +701,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: const Color(0xFFC62828),
-            fontSize: 8.sp,
+            fontSize: 6.5.sp,
             fontWeight: FontWeight.w700,
             height: 1.1,
           ),
@@ -715,8 +715,8 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
       final CartItem? singleAddedCartItem = isSingleVariantInCart ? matchingCartItems.first : null;
 
       return Container(
-        width: 76.w,
-        height: 36.h,
+        width: 56.w,
+        height: 28.h,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [
@@ -726,22 +726,22 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
-          borderRadius: BorderRadius.circular(10.w),
+          borderRadius: BorderRadius.circular(6.w),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF2E7D32).withValues(alpha: 0.35),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              blurRadius: 3,
+              offset: const Offset(0, 1.5),
             ),
           ],
         ),
         child: _loading
             ? Center(
                 child: SizedBox(
-                  width: 13.w,
-                  height: 13.w,
+                  width: 11.w,
+                  height: 11.w,
                   child: const CircularProgressIndicator(
-                    strokeWidth: 2,
+                    strokeWidth: 1.8,
                     strokeCap: StrokeCap.round,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
@@ -819,8 +819,8 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                       }
                     },
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                      child: const Icon(Icons.remove, color: Colors.white, size: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+                      child: const Icon(Icons.remove, color: Colors.white, size: 13),
                     ),
                   ),
 
@@ -838,7 +838,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 14.sp,
+                        fontSize: 11.sp,
                       ),
                     ),
                   ),
@@ -876,8 +876,8 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                       }
                     },
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                      child: const Icon(Icons.add, color: Colors.white, size: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+                      child: const Icon(Icons.add, color: Colors.white, size: 13),
                     ),
                   ),
                 ],
@@ -893,22 +893,22 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
           _showVariantBottomSheet(context, loc?.lat ?? 0.0, loc?.lng ?? 0.0);
         },
         child: Container(
-          width: 76.w,
-          height: 36.h,
+          width: 56.w,
+          height: 28.h,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(10.w),
-            border: Border.all(color: const Color(0xFF2E7D32), width: 1.2),
+            borderRadius: BorderRadius.circular(6.w),
+            border: Border.all(color: const Color(0xFF2E7D32), width: 1.1),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                blurRadius: 3,
+                offset: const Offset(0, 1.5),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(9.w),
+            borderRadius: BorderRadius.circular(5.5.w),
             child: Column(
               children: [
                 Expanded(
@@ -917,24 +917,24 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                       'ADD',
                       style: TextStyle(
                         color: const Color(0xFF2E7D32),
-                        fontSize: 11.5.sp,
+                        fontSize: 9.sp,
                         fontWeight: FontWeight.w900,
                         height: 1.0,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
                 ),
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 2.h),
+                  padding: EdgeInsets.symmetric(vertical: 1.5.h),
                   color: const Color(0xFFE8F5E9),
                   child: Center(
                     child: Text(
                       '${widget.variants.length} Options',
                       style: TextStyle(
                         color: const Color(0xFF2E7D32),
-                        fontSize: 7.5.sp,
+                        fontSize: 6.sp,
                         fontWeight: FontWeight.w700,
                         height: 1.0,
                       ),
@@ -978,27 +978,27 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
               });
             },
       child: Container(
-        width: 76.w,
-        height: 36.h,
+        width: 56.w,
+        height: 28.h,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10.w),
-          border: Border.all(color: const Color(0xFF2E7D32), width: 1.2),
+          borderRadius: BorderRadius.circular(6.w),
+          border: Border.all(color: const Color(0xFF2E7D32), width: 1.1),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              blurRadius: 3,
+              offset: const Offset(0, 1.5),
             ),
           ],
         ),
         child: Center(
           child: _loading
               ? SizedBox(
-                  width: 13.w,
-                  height: 13.w,
+                  width: 11.w,
+                  height: 11.w,
                   child: const CircularProgressIndicator(
-                    strokeWidth: 2,
+                    strokeWidth: 1.8,
                     strokeCap: StrokeCap.round,
                     valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
                   ),
@@ -1007,9 +1007,9 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                   'ADD',
                   style: TextStyle(
                     color: const Color(0xFF2E7D32),
-                    fontSize: 12.5.sp,
+                    fontSize: 10.sp,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
         ),

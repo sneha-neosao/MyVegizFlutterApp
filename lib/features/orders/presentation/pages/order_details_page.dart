@@ -278,9 +278,15 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     );
                     final isDelivered =
                         details.orderStatus.toUpperCase() == 'DELIVERED';
-                    final canCancel =
-                        details.orderStatus.toUpperCase() == 'PENDING' ||
-                        details.orderStatus.toUpperCase() == 'PROCESSING';
+                    final status = details.orderStatus.toUpperCase().trim();
+                    final canCancel = status == 'PENDING' ||
+                        status == 'PROCESSING' ||
+                        status == 'PREPARING' ||
+                        status == 'PREPAIRING' ||
+                        status.contains('PREPAR') ||
+                        status.contains('PREPAIR') ||
+                        status.contains('PROCESS') ||
+                        status.contains('PEND');
                     final orderUuId = details.uuId.isNotEmpty
                         ? details.uuId
                         : widget.orderId;
@@ -664,9 +670,15 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     final details = state.orderDetails;
                     final isDelivered =
                         details.orderStatus.toUpperCase() == 'DELIVERED';
-                    final canCancel =
-                        details.orderStatus.toUpperCase() == 'PENDING' ||
-                        details.orderStatus.toUpperCase() == 'PROCESSING';
+                    final status = details.orderStatus.toUpperCase().trim();
+                    final canCancel = status == 'PENDING' ||
+                        status == 'PROCESSING' ||
+                        status == 'PREPARING' ||
+                        status == 'PREPAIRING' ||
+                        status.contains('PREPAR') ||
+                        status.contains('PREPAIR') ||
+                        status.contains('PROCESS') ||
+                        status.contains('PEND');
                     final orderUuId = details.uuId.isNotEmpty
                         ? details.uuId
                         : widget.orderId;
