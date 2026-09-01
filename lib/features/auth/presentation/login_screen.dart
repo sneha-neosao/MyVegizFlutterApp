@@ -318,68 +318,7 @@ class _LoginScreenState extends State<LoginScreen>
                                               },
                                             ),
 
-                                            SizedBox(height: 10.h),
-
-                                            // OR Divider
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Divider(
-                                                    color: Colors.grey.shade300,
-                                                    thickness: 0.8,
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: EdgeInsets.symmetric(horizontal: 12.w),
-                                                  child: Text(
-                                                    'OR',
-                                                    style: TextStyle(
-                                                      color: Colors.grey.shade500,
-                                                      fontSize: 11.5.sp,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Divider(
-                                                    color: Colors.grey.shade300,
-                                                    thickness: 0.8,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-
-                                            SizedBox(height: 8.h),
-
-                                            // Don't have account? Sign Up
-                                            Center(
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    "Don't have account? ",
-                                                    style: TextStyle(
-                                                      color: Colors.grey.shade700,
-                                                      fontSize: 12.5.sp,
-                                                    ),
-                                                  ),
-                                                  GestureDetector(
-                                                    onTap: () {
-                                                      logger.i('🔐 LoginScreen: "Sign Up" tapped — navigating to signup');
-                                                      context.push(AppRoutePath.signup);
-                                                    },
-                                                    child: Text(
-                                                      'Sign Up',
-                                                      style: TextStyle(
-                                                        color: const Color(0xFFFF5722),
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 12.5.sp,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
+                                            SizedBox(height: 12.h),
                                           ],
                                         ),
                                       ),

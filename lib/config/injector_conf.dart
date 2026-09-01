@@ -184,7 +184,7 @@ void configureDependencies() {
   getIt.registerLazySingleton(() => RegisterUseCase(getIt()));
 
   getIt.registerFactory(
-    () => RegisterBloc(getIt(), getIt<FirebaseAuthService>()),
+    () => RegisterBloc(getIt()),
   );
   //---------------------------------------
   /// regi Verify Otp

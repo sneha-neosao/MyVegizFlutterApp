@@ -9,6 +9,14 @@ import '../bloc/signup_blocs/signup_bloc/signup_bloc.dart';
 import '../bloc/signup_blocs/signup_bloc/signup_event.dart';
 import '../bloc/signup_blocs/signup_bloc/signup_state.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/storage/secure_storage.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/utils/profile_image_notifier.dart';
+import '../../address/bloc/address_bloc.dart';
+import '../../address/bloc/address_event.dart';
+import '../../wishlist/bloc/wishlist_bloc.dart';
+import '../../wishlist/bloc/wishlist_event.dart';
+import '../../home/presentation/pages/home_page.dart';
 
 class SignupScreen extends StatefulWidget {
   final String? initialMobile;
@@ -113,26 +121,63 @@ class _SignupScreenState extends State<SignupScreen>
   @override
   Widget build(BuildContext context) {
     return BlocListener<RegisterBloc, RegisterState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         logger.d('📝 SignupScreen: BlocState → ${state.runtimeType}');
         if (state is RegisterSuccess) {
           FocusScope.of(context).unfocus();
-          final name = nameController.text.trim();
-          final email = emailController.text.trim();
-          final mobile = mobileController.text.trim();
-          logger.i(
-            '✅ SignupScreen: Registration successful — navigating to OTP for $mobile',
-          );
-          context.push(
-            AppRoutePath.regiVerifyOtp,
-            extra: {
-              'name': name,
-              'email': email,
-              'mobile': mobile,
-              'verificationId': state.verificationId ?? '',
-              'resendToken': state.resendToken,
-            },
-          );
+          try {
+            final data = state.model.data;
+            if (data != null) {
+              if (data.accessToken != null &&
+                  data.accessToken!.isNotEmpty) {
+                await SecureStorage.saveAccessToken(data.accessToken!);
+              }
+              if (data.refreshToken != null &&
+                  data.refreshToken!.isNotEmpty) {
+                await SecureStorage.saveRefreshToken(data.refreshToken!);
+              }
+
+              final customer = data.customer;
+              if (customer != null) {
+                await SecureStorage.saveCustomerId(customer.id);
+                await SecureStorage.saveCustomerName(customer.name);
+                await SecureStorage.saveCustomerContact(customer.contact);
+                if (customer.email != null &&
+                    customer.email!.isNotEmpty) {
+                  await SecureStorage.saveCustomerEmail(customer.email!);
+                }
+                await SecureStorage.saveCustomerUuid(customer.uuId);
+                if (customer.profileImage != null &&
+                    customer.profileImage!.isNotEmpty) {
+                  await SecureStorage.saveCustomerProfileImage(
+                    customer.profileImage!,
+                  );
+                  profileImageNotifier.value = customer.profileImage!;
+                }
+              }
+
+              // Update FCM Token on server
+              NoficationService.updateTokenOnServer();
+
+              logger.i(
+                '✅ SignupScreen: Account created & logged in successfully — navigating to home',
+              );
+
+              if (context.mounted) {
+                context.read<WishlistBloc>().add(FetchWishlist());
+                context.read<AddressBloc>().add(FetchAddressList());
+
+                SnackbarUtils.showSuccessSnackbar(
+                  context,
+                  state.model.message,
+                );
+                HomePage.resetLocationSheetFlag();
+                context.go(AppRoutePath.home);
+              }
+            }
+          } catch (e) {
+            logger.e('❌ SignupScreen: STORAGE ERROR — $e');
+          }
         }
         if (state is RegisterFailure) {
           logger.e('❌ SignupScreen: Registration failed — ${state.error}');

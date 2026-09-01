@@ -1,3 +1,5 @@
+import '../../../data/models/register_model.dart';
+
 abstract class RegisterState {}
 
 class RegisterInitial extends RegisterState {}
@@ -5,11 +7,17 @@ class RegisterInitial extends RegisterState {}
 class RegisterLoading extends RegisterState {}
 
 class RegisterSuccess extends RegisterState {
-  final String message;
+  final RegisterModel model;
   final String? verificationId;
   final int? resendToken;
 
-  RegisterSuccess(this.message, {this.verificationId, this.resendToken});
+  RegisterSuccess(
+    this.model, {
+    this.verificationId,
+    this.resendToken,
+  });
+
+  String get message => model.message;
 }
 
 class RegisterFailure extends RegisterState {
@@ -17,3 +25,4 @@ class RegisterFailure extends RegisterState {
 
   RegisterFailure(this.error);
 }
+
