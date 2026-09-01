@@ -27,7 +27,7 @@ class HomeSectionVendorList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 8.h, bottom: 12.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

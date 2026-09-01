@@ -72,7 +72,7 @@ class Section1Mind extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 12.h),
             // Horizontal list scroll of Entity Categories
             SizedBox(
               height: 110.h,
@@ -187,7 +187,7 @@ class _Section1MindShimmer extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 12.h),
         SizedBox(
           height: 110.h,
           child: ListView.builder(

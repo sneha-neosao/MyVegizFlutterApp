@@ -55,7 +55,7 @@ class TopExploreSection extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 30.h),
             child: Center(
@@ -116,7 +116,7 @@ class TopExploreSection extends StatelessWidget {
         ),
       ),
     );
-    children.add(SizedBox(height: 16.h));
+    children.add(SizedBox(height: 12.h));
 
     // Loop through restaurants list and chunk them
     for (int i = 0; i < restaurants.length; i += chunkSize) {

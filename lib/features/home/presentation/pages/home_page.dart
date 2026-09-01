@@ -711,7 +711,7 @@ class _HomeShimmer extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 12.h),
             SizedBox(
               height: 110.h,
               child: ListView.builder(
@@ -763,7 +763,7 @@ class _HomeShimmer extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 12.h),
             SizedBox(
               height: 130.h,
               child: ListView.builder(

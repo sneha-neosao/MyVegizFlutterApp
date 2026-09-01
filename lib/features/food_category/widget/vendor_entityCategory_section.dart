@@ -87,7 +87,7 @@ class VendorEntityCategorySection extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 12.h),
             SizedBox(
               height: 125.w,
               child: ListView.builder(

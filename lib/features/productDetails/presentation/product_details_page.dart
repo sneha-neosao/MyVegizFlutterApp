@@ -435,7 +435,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                               return imgUrl.isNotEmpty
                                   ? Image.network(
                                       imgUrl,
-                                      fit: BoxFit.cover,
+                                      fit: BoxFit.contain,
                                       errorBuilder: (_, __, ___) => Container(
                                         color: Colors.white,
                                         child: Icon(

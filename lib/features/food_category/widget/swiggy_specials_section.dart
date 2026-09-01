@@ -385,7 +385,7 @@ class RecommendedFoodsSection extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 14.h),
+          SizedBox(height: 12.h),
           // Horizontal List View
           SizedBox(
             height: 220.w,

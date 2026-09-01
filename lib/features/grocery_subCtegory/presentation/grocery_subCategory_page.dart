@@ -279,7 +279,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
   Widget _buildSectionHeader(String title) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
+        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
         child: Text(
           title,
           style: TextStyle(

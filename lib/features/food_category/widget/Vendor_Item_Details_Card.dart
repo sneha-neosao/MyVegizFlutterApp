@@ -277,34 +277,34 @@ class _VenderItemDetailsCardState extends State<VenderItemDetailsCard> {
           // Top Image Section
           Stack(
             children: [
-              imageUrl.startsWith('http')
-                  ? Image.network(
-                      imageUrl,
-                      height: 250,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+              Container(
+                height: 250,
+                width: double.infinity,
+                color: Colors.grey.shade50,
+                child: imageUrl.startsWith('http')
+                    ? Image.network(
+                        imageUrl,
                         height: 250,
-                        color: Colors.grey.shade100,
-                        child:
-                            const Icon(Icons.fastfood, size: 80, color: Colors.grey),
-                      ),
-                    )
-                  : Container(
-                      height: 250,
-                      width: double.infinity,
-                      color: Colors.grey.shade100,
-                      child: imageUrl.isNotEmpty
-                          ? Image.network(
-                              NetworkImages.mapAssetToNetwork(imageUrl),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.fastfood,
-                                      size: 80, color: Colors.grey),
-                            )
-                          : const Icon(Icons.fastfood,
-                              size: 80, color: Colors.grey),
-                    ),
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 250,
+                          color: Colors.grey.shade100,
+                          child:
+                              const Icon(Icons.fastfood, size: 80, color: Colors.grey),
+                        ),
+                      )
+                    : (imageUrl.isNotEmpty
+                        ? Image.network(
+                            NetworkImages.mapAssetToNetwork(imageUrl),
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.fastfood,
+                                    size: 80, color: Colors.grey),
+                          )
+                        : const Icon(Icons.fastfood,
+                            size: 80, color: Colors.grey)),
+              ),
               // Close Button
               Positioned(
                 top: 12,

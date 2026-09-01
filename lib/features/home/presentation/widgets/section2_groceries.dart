@@ -95,7 +95,7 @@ class Section2Groceries extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 12.h),
             Container(
               color: Colors.white,
               // padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -221,7 +221,7 @@ class Section2Groceries extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 12.h),
         SizedBox(
           height: 155.h,
           child: ListView.builder(
