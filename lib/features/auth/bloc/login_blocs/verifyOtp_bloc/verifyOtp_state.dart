@@ -1,4 +1,4 @@
-import 'package:my_vegiz_flutter/features/auth/data/models/verifyOtp_model.dart';
+import 'package:my_vegiz_flutter/features/auth/data/models/checkUserExist_model.dart';
 
 abstract class VerifyOtpState {}
 
@@ -7,7 +7,7 @@ class VerifyOtpInitial extends VerifyOtpState {}
 class VerifyOtpLoading extends VerifyOtpState {}
 
 class VerifyOtpSuccess extends VerifyOtpState {
-  final VerifyOtpModel data;
+  final CheckUserExistModel data;
 
   VerifyOtpSuccess(this.data);
 }

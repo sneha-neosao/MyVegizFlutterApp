@@ -44,6 +44,11 @@ class ClearCartEvent extends CartEvent {
   ClearCartEvent({this.isSilent = false});
 }
 
+class ClearCartAndAddToCartEvent extends CartEvent {
+  final AddToCartEvent pendingEvent;
+  ClearCartAndAddToCartEvent(this.pendingEvent);
+}
+
 class ValidateAddressEvent extends CartEvent {
   final String addressUuid;
   ValidateAddressEvent(this.addressUuid);

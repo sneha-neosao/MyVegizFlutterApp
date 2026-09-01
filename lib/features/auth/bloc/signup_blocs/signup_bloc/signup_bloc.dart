@@ -25,15 +25,17 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
         },
         onVerificationFailed: (errorMessage, exception) {
           logger.e("❌ RegisterBloc: onVerificationFailed: $errorMessage");
-          add(RegisterErrorEvent(errorMessage));
+          if (!isClosed) add(RegisterErrorEvent(errorMessage));
         },
         onCodeSent: (verificationId, resendToken) {
           logger.i("📬 RegisterBloc: onCodeSent: $verificationId (resendToken: $resendToken)");
-          add(RegisterCodeSentEvent(
-            verificationId: verificationId,
-            resendToken: resendToken,
-            message: 'OTP sent to ${event.mobile}',
-          ));
+          if (!isClosed) {
+            add(RegisterCodeSentEvent(
+              verificationId: verificationId,
+              resendToken: resendToken,
+              message: 'OTP sent to ${event.mobile}',
+            ));
+          }
         },
         onCodeAutoRetrievalTimeout: (verificationId) {
           logger.w("⏳ RegisterBloc: onCodeAutoRetrievalTimeout: $verificationId");

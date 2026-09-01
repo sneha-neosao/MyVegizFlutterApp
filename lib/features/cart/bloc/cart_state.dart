@@ -1,5 +1,6 @@
 import 'package:my_vegiz_flutter/features/cart/data/models/cart_model.dart';
 import 'package:my_vegiz_flutter/features/cart/data/models/coupon_model.dart';
+import 'cart_event.dart';
 
 abstract class CartState {}
 
@@ -25,6 +26,18 @@ class CartError extends CartState {
   final String message;
   final CartData? cartData;
   CartError(this.message, {this.cartData});
+}
+
+class DifferentZoneCartConflictState extends CartState {
+  final String message;
+  final AddToCartEvent pendingEvent;
+  final CartData? cartData;
+
+  DifferentZoneCartConflictState({
+    required this.message,
+    required this.pendingEvent,
+    this.cartData,
+  });
 }
 
 // --- Coupon States ---

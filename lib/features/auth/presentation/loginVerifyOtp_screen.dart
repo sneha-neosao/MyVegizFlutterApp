@@ -157,19 +157,59 @@ class _OtpScreenState extends State<LoginVerifyOtpScreen>
               try {
                 final data = state.data.data;
                 if (data != null) {
-                  await SecureStorage.saveAccessToken(data.accessToken);
-                  await SecureStorage.saveRefreshToken(data.refreshToken);
-                  await SecureStorage.saveCustomerId(data.customer.id);
-                  await SecureStorage.saveCustomerName(data.customer.name);
-                  await SecureStorage.saveCustomerContact(data.customer.contact);
-                  await SecureStorage.saveCustomerEmail(data.customer.email);
-                  await SecureStorage.saveCustomerUuid(data.customer.uuId);
-                  if (data.customer.profileImage != null &&
-                      data.customer.profileImage!.isNotEmpty) {
-                    await SecureStorage.saveCustomerProfileImage(
-                      data.customer.profileImage!,
+                  if (!data.isExist) {
+                    context.push(
+                      AppRoutePath.signup,
+                      extra: {
+                        'mobile': widget.mobile,
+                        'isReadOnly': true,
+                      },
                     );
-                    profileImageNotifier.value = data.customer.profileImage!;
+                    return;
+                  }
+
+                  if (data.isBlock) {
+                    SnackbarUtils.showErrorSnackbar(
+                      context,
+                      'Your account has been blocked.',
+                    );
+                    return;
+                  }
+
+                  if (!data.isActive) {
+                    SnackbarUtils.showErrorSnackbar(
+                      context,
+                      'Your account is currently inactive.',
+                    );
+                    return;
+                  }
+
+                  if (data.accessToken != null &&
+                      data.accessToken!.isNotEmpty) {
+                    await SecureStorage.saveAccessToken(data.accessToken!);
+                  }
+                  if (data.refreshToken != null &&
+                      data.refreshToken!.isNotEmpty) {
+                    await SecureStorage.saveRefreshToken(data.refreshToken!);
+                  }
+
+                  final customer = data.customer;
+                  if (customer != null) {
+                    await SecureStorage.saveCustomerId(customer.id);
+                    await SecureStorage.saveCustomerName(customer.name);
+                    await SecureStorage.saveCustomerContact(customer.contact);
+                    if (customer.email != null &&
+                        customer.email!.isNotEmpty) {
+                      await SecureStorage.saveCustomerEmail(customer.email!);
+                    }
+                    await SecureStorage.saveCustomerUuid(customer.uuId);
+                    if (customer.profileImage != null &&
+                        customer.profileImage!.isNotEmpty) {
+                      await SecureStorage.saveCustomerProfileImage(
+                        customer.profileImage!,
+                      );
+                      profileImageNotifier.value = customer.profileImage!;
+                    }
                   }
 
                   // Update FCM Token on server

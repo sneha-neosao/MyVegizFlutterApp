@@ -8,14 +8,17 @@ import '../features/auth/bloc/login_blocs/login_bloc/sendOtp_bloc.dart';
 import '../features/auth/bloc/login_blocs/verifyOtp_bloc/verifyOtp_bloc.dart';
 import '../features/auth/bloc/signup_blocs/regiVerifyOtp_blocs/regiVerifyOtp_bloc.dart';
 import '../features/auth/bloc/signup_blocs/signup_bloc/signup_bloc.dart';
+import '../features/auth/domain/usecase/checkUserExist_usecase.dart';
 import '../features/auth/domain/usecase/regiVerifyOtp_usecase.dart';
 import '../features/auth/domain/usecase/register_usecase.dart';
 import '../features/auth/domain/usecase/sendOtp_usecase.dart';
 import '../features/auth/domain/usecase/verifyOtp_usecase.dart';
+import '../features/auth/data/datasources/checkUserExist_datasource.dart';
 import '../features/auth/data/datasources/regiVerifyOtp_datasource.dart';
 import '../features/auth/data/datasources/register_datasource.dart';
 import '../features/auth/data/datasources/sendOtp_datasource.dart';
 import '../features/auth/data/datasources/verifyOtp_datasource.dart';
+import '../features/auth/data/repository/checkUserExist_repo.dart';
 import '../features/auth/data/repository/regiVerifyOtp_repo.dart';
 import '../features/grocery_subCtegory/bloc/homePage/homePage_bloc.dart';
 import '../features/grocery_subCtegory/usecases/homePage_usecase.dart';
@@ -144,7 +147,17 @@ void configureDependencies() {
     () => SendOtpBloc(getIt<SendOtpUseCase>(), getIt<FirebaseAuthService>()),
   );
   // ----------------------------------------
-  ///verify_otp
+  /// checkUserExist & verify_otp
+  getIt.registerLazySingleton<CheckUserExistRemoteDataSource>(
+    () => CheckUserExistRemoteDataSource(getIt()),
+  );
+
+  getIt.registerLazySingleton<CheckUserExistRepository>(
+    () => CheckUserExistRepositoryImpl(getIt()),
+  );
+
+  getIt.registerLazySingleton(() => CheckUserExistUseCase(getIt()));
+
   getIt.registerLazySingleton<VerifyOtpRemoteDataSource>(
     () => VerifyOtpRemoteDataSource(getIt()),
   );
@@ -156,7 +169,7 @@ void configureDependencies() {
   getIt.registerLazySingleton(() => VerifyOtpUseCase(getIt()));
 
   getIt.registerFactory(
-    () => VerifyOtpBloc(getIt(), getIt<FirebaseAuthService>()),
+    () => VerifyOtpBloc(getIt<CheckUserExistUseCase>(), getIt<FirebaseAuthService>()),
   );
   //---------------------------------------
   /// register (sign up)

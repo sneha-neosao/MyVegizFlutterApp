@@ -11,7 +11,14 @@ import '../bloc/signup_blocs/signup_bloc/signup_state.dart';
 import '../../../core/utils/snackbar_utils.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final String? initialMobile;
+  final bool isMobileReadOnly;
+
+  const SignupScreen({
+    super.key,
+    this.initialMobile,
+    this.isMobileReadOnly = false,
+  });
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -40,6 +47,12 @@ class _SignupScreenState extends State<SignupScreen>
   void initState() {
     super.initState();
     logger.i('📝 SignupScreen: initState');
+    if (widget.initialMobile != null && widget.initialMobile!.isNotEmpty) {
+      final clean = widget.initialMobile!.startsWith("+91")
+          ? widget.initialMobile!.substring(3)
+          : widget.initialMobile!;
+      mobileController.text = clean;
+    }
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
@@ -474,6 +487,7 @@ class _SignupScreenState extends State<SignupScreen>
   Widget _buildMobileField() {
     return TextFormField(
       controller: mobileController,
+      readOnly: widget.isMobileReadOnly,
       keyboardType: TextInputType.phone,
       maxLength: 10,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -489,7 +503,7 @@ class _SignupScreenState extends State<SignupScreen>
       style: TextStyle(
         fontSize: 15.sp,
         fontWeight: FontWeight.w600,
-        color: Colors.black87,
+        color: widget.isMobileReadOnly ? Colors.grey.shade700 : Colors.black87,
       ),
       decoration: InputDecoration(
         counterText: '',
@@ -504,7 +518,9 @@ class _SignupScreenState extends State<SignupScreen>
           fontSize: 14.sp,
         ),
         filled: true,
-        fillColor: const Color(0xFFFBFBFB),
+        fillColor: widget.isMobileReadOnly
+            ? const Color(0xFFF3F3F3)
+            : const Color(0xFFFBFBFB),
         contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         prefixIcon: Padding(
           padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -537,11 +553,21 @@ class _SignupScreenState extends State<SignupScreen>
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.w),
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+          borderSide: BorderSide(
+            color: widget.isMobileReadOnly
+                ? Colors.grey.shade300
+                : Colors.grey.shade300,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.w),
-          borderSide: const BorderSide(color: Color(0xFFFF5722), width: 1.5),
+          borderSide: BorderSide(
+            color: widget.isMobileReadOnly
+                ? Colors.grey.shade400
+                : const Color(0xFFFF5722),
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.w),

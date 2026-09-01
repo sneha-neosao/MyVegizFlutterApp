@@ -20,22 +20,24 @@ class SendOtpBloc extends Bloc<SendOtpEvent, SendOtpState> {
         resendToken: event.resendToken,
         onVerificationCompleted: (credential) {
           logger.i("⚡ SendOtpBloc: onVerificationCompleted triggered");
-          add(SendOtpAutoVerifiedEvent(credential));
+          if (!isClosed) add(SendOtpAutoVerifiedEvent(credential));
         },
         onVerificationFailed: (errorMessage, exception) {
           logger.e("❌ SendOtpBloc: onVerificationFailed: $errorMessage");
-          add(SendOtpErrorEvent(errorMessage));
+          if (!isClosed) add(SendOtpErrorEvent(errorMessage));
         },
         onCodeSent: (verificationId, resendToken) {
           logger.i("📬 SendOtpBloc: onCodeSent: $verificationId (resendToken: $resendToken)");
-          add(SendOtpCodeSentEvent(
-            verificationId: verificationId,
-            resendToken: resendToken,
-          ));
+          if (!isClosed) {
+            add(SendOtpCodeSentEvent(
+              verificationId: verificationId,
+              resendToken: resendToken,
+            ));
+          }
         },
         onCodeAutoRetrievalTimeout: (verificationId) {
           logger.w("⏳ SendOtpBloc: onCodeAutoRetrievalTimeout: $verificationId");
-          add(SendOtpTimeoutEvent(verificationId));
+          if (!isClosed) add(SendOtpTimeoutEvent(verificationId));
         },
       );
     });

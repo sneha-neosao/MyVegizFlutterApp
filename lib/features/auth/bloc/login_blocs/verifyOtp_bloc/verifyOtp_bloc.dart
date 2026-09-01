@@ -1,16 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../core/storage/secure_storage.dart';
 import '../../../../../core/services/firebase_auth_service.dart';
 import '../../../../../core/utils/logger.dart';
-import '../../../domain/usecase/verifyOtp_usecase.dart';
+import '../../../domain/usecase/checkUserExist_usecase.dart';
 import './verifyOtp_event.dart';
 import './verifyOtp_state.dart';
 
 class VerifyOtpBloc extends Bloc<VerifyOtpEvent, VerifyOtpState> {
-  final VerifyOtpUseCase useCase;
+  final CheckUserExistUseCase checkUserExistUseCase;
   final FirebaseAuthService authService;
 
-  VerifyOtpBloc(this.useCase, this.authService) : super(VerifyOtpInitial()) {
+  VerifyOtpBloc(this.checkUserExistUseCase, this.authService) : super(VerifyOtpInitial()) {
     on<VerifyOtpPressed>((event, emit) async {
       logger.i("🚀 VerifyOtpBloc: Triggered for mobile: ${event.mobile}, OTP: ${event.otp}");
       emit(VerifyOtpLoading());
@@ -24,6 +25,11 @@ class VerifyOtpBloc extends Bloc<VerifyOtpEvent, VerifyOtpState> {
             smsCode: event.otp,
           );
           logger.i("✅ VerifyOtpBloc: Firebase verification successful! UID: ${userCredential.user?.uid}");
+
+          final firebaseIdToken = await userCredential.user?.getIdToken();
+          if (firebaseIdToken != null) {
+            await SecureStorage.saveAccessToken(firebaseIdToken);
+          }
         } on FirebaseAuthException catch (e) {
           logger.e("❌ VerifyOtpBloc: Firebase Auth Error [${e.code}] — ${e.message}");
           emit(VerifyOtpFailure(e.message ?? 'Invalid verification code'));
@@ -35,17 +41,17 @@ class VerifyOtpBloc extends Bloc<VerifyOtpEvent, VerifyOtpState> {
         }
       }
 
-      // 2. Call backend useCase to sync customer session & store tokens in SecureStorage
-      logger.i("🌐 VerifyOtpBloc: Syncing session with Backend API");
-      final res = await useCase(event.mobile, event.otp);
+      // 2. On Firebase OTP success, call checkUserExist API with the mobile number
+      logger.i("🌐 VerifyOtpBloc: Calling checkUserExist API for mobile: ${event.mobile}");
+      final res = await checkUserExistUseCase(event.mobile);
 
       res.fold(
         (failure) {
-          logger.e("❌ VerifyOtpBloc: Backend verify failed: ${failure.message}");
+          logger.e("❌ VerifyOtpBloc: Check user exist failed: ${failure.message}");
           emit(VerifyOtpFailure(failure.message));
         },
         (success) {
-          logger.i("✅ VerifyOtpBloc: Backend session verified: ${success.message}");
+          logger.i("✅ VerifyOtpBloc: Check user exist success: ${success.message}");
           emit(VerifyOtpSuccess(success));
         },
       );

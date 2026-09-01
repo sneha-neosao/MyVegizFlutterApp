@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_vegiz_flutter/features/cart/data/models/cart_model.dart';
+import '../../../core/api/api/api_exception.dart';
 import '../../../core/utils/logger.dart';
 import '../domain/usecase/cart_usecases.dart';
 import './cart_event.dart';
@@ -39,6 +40,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     required this.validateCouponUseCase,
   }) : super(CartInitial()) {
     on<AddToCartEvent>(_onAddToCart);
+    on<ClearCartAndAddToCartEvent>(_onClearCartAndAddToCart);
     on<GetCartListEvent>(_onGetCartList);
     on<UpdateCartEvent>(_onUpdateCart);
     on<ClearCartEvent>(_onClearCart);
@@ -139,6 +141,15 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     );
   }
 
+  bool _isDifferentZoneConflict(String message) {
+    final lower = message.toLowerCase();
+    return lower.contains('zone') ||
+        lower.contains('different zone') ||
+        lower.contains('another zone') ||
+        (lower.contains('empty') && lower.contains('cart')) ||
+        (lower.contains('clear') && lower.contains('cart'));
+  }
+
   // ── Add to Cart ─────────────────────────────────────────────────────────
 
   Future<void> _onAddToCart(
@@ -169,11 +180,77 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         add(GetCartListEvent(lat: event.lat, lng: event.lng));
       } else {
         logger.w('⚠️ CartBloc: AddToCart failed — ${response.message}');
-        emit(CartError(response.message));
+        if (_isDifferentZoneConflict(response.message)) {
+          emit(DifferentZoneCartConflictState(
+            message: response.message,
+            pendingEvent: event,
+            cartData: _cachedCart,
+          ));
+        } else {
+          emit(CartError(response.message, cartData: _cachedCart));
+        }
       }
     } catch (e) {
-      logger.e('❌ CartBloc: AddToCart exception — $e');
-      emit(CartError(e.toString()));
+      final msg = e is ApiException ? e.message : e.toString();
+      logger.e('❌ CartBloc: AddToCart exception — $msg');
+      if (_isDifferentZoneConflict(msg)) {
+        emit(DifferentZoneCartConflictState(
+          message: msg,
+          pendingEvent: event,
+          cartData: _cachedCart,
+        ));
+      } else {
+        emit(CartError(msg, cartData: _cachedCart));
+      }
+    }
+  }
+
+  // ── Clear Cart and Add Pending Item ─────────────────────────────────────
+
+  Future<void> _onClearCartAndAddToCart(
+    ClearCartAndAddToCartEvent event,
+    Emitter<CartState> emit,
+  ) async {
+    logger.i(
+      '🗑️ CartBloc: ClearCartAndAddToCart — clearing cart and adding variantId=${event.pendingEvent.productVariantId}',
+    );
+    emit(CartLoading(cartData: _cachedCart));
+    try {
+      final clearResponse = await clearCartUseCase.execute(isFood: isFood);
+      logger.i(
+        '🗑️ CartBloc: ClearCart completed with status=${clearResponse.status}',
+      );
+
+      final addResponse = await addToCartUseCase.execute(
+        productVariantId: event.pendingEvent.productVariantId,
+        quantity: event.pendingEvent.quantity,
+        lat: event.pendingEvent.lat,
+        lng: event.pendingEvent.lng,
+        isFood: isFood,
+        addonIds: event.pendingEvent.addonIds,
+        addonData: event.pendingEvent.addonData,
+      );
+
+      logger.d(
+        '🛒 CartBloc: AddToCart after clear response — status=${addResponse.status}, msg="${addResponse.message}"',
+      );
+
+      if (addResponse.status == 200) {
+        logger.i('✅ CartBloc: Added new item after clearing cart successfully');
+        _cachedCart = _mergeCartData(null, addResponse.data);
+        emit(CartActionSuccess(addResponse.message, cartData: _cachedCart));
+        add(GetCartListEvent(
+          lat: event.pendingEvent.lat,
+          lng: event.pendingEvent.lng,
+        ));
+      } else {
+        logger.w('⚠️ CartBloc: AddToCart after clear failed — ${addResponse.message}');
+        emit(CartError(addResponse.message, cartData: _cachedCart));
+      }
+    } catch (e) {
+      final msg = e is ApiException ? e.message : e.toString();
+      logger.e('❌ CartBloc: ClearCartAndAddToCart exception — $msg');
+      emit(CartError(msg, cartData: _cachedCart));
     }
   }
 

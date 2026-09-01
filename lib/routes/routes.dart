@@ -65,6 +65,7 @@ import '../features/wallet/presentation/pages/wallet_page.dart';
 import '../features/cart/data/cart_data.dart';
 
 class AppRoutes {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static String initialRoute = AppRoutePath.login;
   late final GoRouter router;
 
@@ -73,6 +74,7 @@ class AppRoutes {
   }
 
   GoRouter _createRouter() => GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: initialRoute,
     routes: [
       GoRoute(
@@ -176,12 +178,30 @@ class AppRoutes {
       ),
       GoRoute(
         path: AppRoutePath.signup,
-        builder: (context, state) => _safe(
-          BlocProvider(
-            create: (_) => getIt<RegisterBloc>(),
-            child: const SignupScreen(),
-          ),
-        ),
+        builder: (context, state) {
+          String? initialMobile;
+          bool isMobileReadOnly = false;
+
+          if (state.extra is Map<String, dynamic>) {
+            final map = state.extra as Map<String, dynamic>;
+            initialMobile = map['mobile'] as String?;
+            isMobileReadOnly = map['isReadOnly'] as bool? ??
+                (initialMobile != null && initialMobile.isNotEmpty);
+          } else if (state.extra is String) {
+            initialMobile = state.extra as String;
+            isMobileReadOnly = true;
+          }
+
+          return _safe(
+            BlocProvider(
+              create: (_) => getIt<RegisterBloc>(),
+              child: SignupScreen(
+                initialMobile: initialMobile,
+                isMobileReadOnly: isMobileReadOnly,
+              ),
+            ),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutePath.otp,

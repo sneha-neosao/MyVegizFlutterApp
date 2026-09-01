@@ -7,6 +7,9 @@ import './routes/routes.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import './features/cart/bloc/cart_bloc.dart';
 import './features/cart/bloc/food_cart_bloc.dart';
+import './features/cart/bloc/cart_state.dart';
+import './features/cart/bloc/cart_event.dart';
+import './widgets/different_zone_cart_dialog.dart';
 
 import './features/cart/data/cart_data.dart';
 import './features/wishlist/bloc/wishlist_bloc.dart';
@@ -205,24 +208,60 @@ class MyViggiesApp extends StatelessWidget {
         routerConfig: appRoutes.router,
         builder: (context, child) {
           Responsive.init(context);
-          return Stack(
-            children: [
-              child ?? const SizedBox.shrink(),
-              BlocBuilder<ConnectivityBloc, ConnectivityState>(
-                builder: (context, state) {
-                  if (state is ConnectivityDisconnected) {
-                    return NoInternetScreen(
-                      onRetry: () {
-                        context.read<ConnectivityBloc>().add(
-                          CheckConnectivity(),
+          return MultiBlocListener(
+            listeners: [
+              BlocListener<CartBloc, CartState>(
+                listener: (context, state) {
+                  if (state is DifferentZoneCartConflictState) {
+                    final navContext = AppRoutes.navigatorKey.currentContext ?? context;
+                    showDifferentZoneCartDialog(
+                      context: navContext,
+                      message: state.message,
+                      onEmptyCartAndAdd: () {
+                        getIt<CartBloc>().add(
+                          ClearCartAndAddToCartEvent(state.pendingEvent),
                         );
                       },
                     );
                   }
-                  return const SizedBox.shrink();
+                },
+              ),
+              BlocListener<FoodCartBloc, CartState>(
+                listener: (context, state) {
+                  if (state is DifferentZoneCartConflictState) {
+                    final navContext = AppRoutes.navigatorKey.currentContext ?? context;
+                    showDifferentZoneCartDialog(
+                      context: navContext,
+                      message: state.message,
+                      onEmptyCartAndAdd: () {
+                        getIt<FoodCartBloc>().add(
+                          ClearCartAndAddToCartEvent(state.pendingEvent),
+                        );
+                      },
+                    );
+                  }
                 },
               ),
             ],
+            child: Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                BlocBuilder<ConnectivityBloc, ConnectivityState>(
+                  builder: (context, state) {
+                    if (state is ConnectivityDisconnected) {
+                      return NoInternetScreen(
+                        onRetry: () {
+                          context.read<ConnectivityBloc>().add(
+                            CheckConnectivity(),
+                          );
+                        },
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
+            ),
           );
         },
       ),

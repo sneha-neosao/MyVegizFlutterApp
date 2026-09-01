@@ -382,7 +382,10 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                       child: BlocConsumer<CartBloc, CartState>(
                         listener: (context, state) {
-                          if (state is CartActionSuccess || state is CartError || state is CartLoaded) {
+                          if (state is CartActionSuccess ||
+                              state is CartError ||
+                              state is CartLoaded ||
+                              state is DifferentZoneCartConflictState) {
                             if (_loading) {
                               setState(() => _loading = false);
                             }
@@ -1074,7 +1077,8 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
       listener: (context, cartState) {
         if (cartState is CartActionSuccess ||
             cartState is CartLoaded ||
-            cartState is CartError) {
+            cartState is CartError ||
+            cartState is DifferentZoneCartConflictState) {
           if (_loadingMap.values.any((v) => v)) {
             setState(() => _loadingMap.updateAll((_, __) => false));
           }

@@ -5,11 +5,11 @@ import '../../utils/logger.dart';
 class ApiUrl {
   const ApiUrl._();
 
-  static String baseUrl = 'https://myvegizapis.neosao.co.in/api/v1';
-  static String networkChecker = 'https://myvegizapis.neosao.co.in';
+  // static String baseUrl = 'https://myvegizapis.neosao.co.in/api/v1';
+  // static String networkChecker = 'https://myvegizapis.neosao.co.in';
 
-  // static String baseUrl = 'http://192.168.1.17:8002/api/v1';
-  // static String networkChecker = 'http://192.168.1.17:8002';
+  static String baseUrl = 'http://192.168.1.17:8002/api/v1';
+  static String networkChecker = 'http://192.168.1.17:8002';
 
   static Future<void> initBaseUrl() async {
     try {} catch (e) {
@@ -18,6 +18,8 @@ class ApiUrl {
   }
 
   static String sendOtp = "$baseUrl/web/auth/send-otp";
+
+  static String checkUserExist = "$baseUrl/web/auth/check-user-exist";
 
   static String updateFirebaseToken = "$baseUrl/web/auth/update-firebase-token";
 
