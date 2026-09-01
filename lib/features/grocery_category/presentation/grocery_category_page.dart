@@ -376,12 +376,21 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
     final lng = loc?.lng ?? 0.0;
     final categorySlug = card.slug ?? '';
 
+    final firstCategory = card.homeSections
+        ?.expand((s) => s.categories ?? <CategoryModel>[])
+        .firstOrNull;
+    final firstSubCategoryUuId = firstCategory?.subCategories?.firstOrNull?.uuId;
+    final effectiveSlug = categorySlug.isNotEmpty
+        ? categorySlug
+        : (firstCategory?.slug ?? '');
+
     final catModel = CategoryModel(
       id: card.id,
       uuId: card.uuId,
       categoryName: card.tabName,
-      slug: categorySlug,
+      slug: effectiveSlug,
       categoryImage: card.homeIcon,
+      subCategories: firstCategory?.subCategories,
     );
 
     Navigator.of(context).push(
@@ -394,8 +403,8 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
                   FetchProductsAndFiltersEvent(
                     homeTabId: card.id,
                     homeTabUuId: card.uuId,
-                    categorySlug: null,
-                    subCategoryUuId: null,
+                    categorySlug: effectiveSlug.isNotEmpty ? effectiveSlug : null,
+                    subCategoryUuId: firstSubCategoryUuId,
                     lat: lat,
                     lng: lng,
                     resetFilters: true,

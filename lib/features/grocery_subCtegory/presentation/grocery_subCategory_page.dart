@@ -6,6 +6,7 @@ import '../../../config/injector_conf.dart';
 import 'package:my_vegiz_flutter/features/grocery_category/widget/grocery_product_card.dart';
 import '../data/models/homePage_model.dart';
 import '../data/models/home_tab_sub_categories_model.dart';
+import '../data/models/category_filters_model.dart';
 import '../bloc/categoryProducts/category_products_bloc.dart';
 import '../bloc/categoryProducts/category_products_event.dart';
 import '../bloc/categoryProducts/category_products_state.dart';
@@ -79,6 +80,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
     final loc = locationService.locationNotifier.value;
     final lat = loc?.lat ?? 0.0;
     final lng = loc?.lng ?? 0.0;
+    final firstSubUuid = cat.subCategories?.firstOrNull?.uuId;
 
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -90,7 +92,8 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
                   FetchProductsAndFiltersEvent(
                     homeTabId: widget.tabData.id,
                     homeTabUuId: widget.tabData.uuId,
-                    categorySlug: null,
+                    categorySlug: cat.slug,
+                    subCategoryUuId: firstSubUuid,
                     lat: lat,
                     lng: lng,
                     resetFilters: true,
@@ -548,11 +551,13 @@ class _GrocerySubCategoryProductsPageState
             prodBloc.add(FilterSubCategoryChangedEvent(prodState.selectedSubCategoryUuId));
           } else if (widget.category.slug != null) {
             final loc = locationService.locationNotifier.value;
+            final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
             prodBloc.add(
               FetchProductsAndFiltersEvent(
                 homeTabId: widget.tabData.id,
                 homeTabUuId: widget.tabData.uuId,
-                categorySlug: null,
+                categorySlug: widget.category.slug,
+                subCategoryUuId: firstSubUuid,
                 lat: loc?.lat ?? 0.0,
                 lng: loc?.lng ?? 0.0,
                 resetFilters: false,
@@ -693,11 +698,13 @@ class _GrocerySubCategoryProductsPageState
             onPressed: () {
               if (widget.category.slug != null) {
                 final loc = locationService.locationNotifier.value;
+                final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
                 context.read<CategoryProductsBloc>().add(
                   FetchProductsAndFiltersEvent(
                     homeTabId: widget.tabData.id,
                     homeTabUuId: widget.tabData.uuId,
-                    categorySlug: null,
+                    categorySlug: widget.category.slug,
+                    subCategoryUuId: firstSubUuid,
                     lat: loc?.lat ?? 0.0,
                     lng: loc?.lng ?? 0.0,
                     resetFilters: true,
@@ -713,11 +720,56 @@ class _GrocerySubCategoryProductsPageState
   }
 
   Widget _buildSubCategorySidebar(CategoryProductsLoaded state) {
-    final subCategories =
-        state.categoryFiltersResponse.data?.subCategories ?? [];
+    List<FilterOption> subCategories = state.categoryFiltersResponse.data?.subCategories ?? [];
+
+    if (subCategories.isEmpty && state.homeTabSubCategories != null && state.homeTabSubCategories!.isNotEmpty) {
+      subCategories = state.homeTabSubCategories!
+          .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
+          .toList();
+    }
+
+    if (subCategories.isEmpty && widget.tabData.homeSections != null && widget.tabData.homeSections!.isNotEmpty) {
+      final seenUuids = <String>{};
+      final list = <FilterOption>[];
+      for (var section in widget.tabData.homeSections!) {
+        if (section.categories != null) {
+          for (var cat in section.categories!) {
+            if (cat.subCategories != null) {
+              for (var sub in cat.subCategories!) {
+                final uuid = sub.uuId ?? '';
+                final name = sub.subCategoryName ?? '';
+                if (uuid.isNotEmpty && !seenUuids.contains(uuid)) {
+                  seenUuids.add(uuid);
+                  list.add(FilterOption(key: uuid, label: name));
+                }
+              }
+            }
+          }
+        }
+      }
+      if (list.isNotEmpty) subCategories = list;
+    }
+
+    if (subCategories.isEmpty && widget.category.subCategories != null && widget.category.subCategories!.isNotEmpty) {
+      subCategories = widget.category.subCategories!
+          .where((s) => (s.uuId ?? '').isNotEmpty)
+          .map((s) => FilterOption(key: s.uuId!, label: s.subCategoryName ?? ''))
+          .toList();
+    }
+
+    if (subCategories.isEmpty && state.categoryProductsResponse.data?.subCategories != null && state.categoryProductsResponse.data!.subCategories!.isNotEmpty) {
+      subCategories = state.categoryProductsResponse.data!.subCategories!
+          .where((s) => (s.uuId ?? '').isNotEmpty)
+          .map((s) => FilterOption(key: s.uuId!, label: s.subCategoryName ?? ''))
+          .toList();
+    }
+
     final homeTabSubs = state.homeTabSubCategories ?? [];
     final productsSubCategories =
         state.categoryProductsResponse.data?.subCategories ?? [];
+
+    final String? activeSelectedKey = state.selectedSubCategoryUuId ??
+        (subCategories.isNotEmpty ? subCategories.first.key : null);
 
     return Container(
       width: 68.w,
@@ -729,7 +781,7 @@ class _GrocerySubCategoryProductsPageState
         itemCount: subCategories.length,
         itemBuilder: (context, index) {
           final sub = subCategories[index];
-          final isSelected = state.selectedSubCategoryUuId == sub.key;
+          final isSelected = activeSelectedKey == sub.key;
 
           String? image;
           if (homeTabSubs.isNotEmpty) {
@@ -744,7 +796,28 @@ class _GrocerySubCategoryProductsPageState
                 createdAt: '',
               ),
             );
-            image = matched.subCategoryImage;
+            if (matched.subCategoryImage != null && matched.subCategoryImage!.isNotEmpty) {
+              image = matched.subCategoryImage;
+            }
+          }
+
+          if ((image == null || image.isEmpty) && widget.tabData.homeSections != null) {
+            for (var section in widget.tabData.homeSections!) {
+              if (section.categories != null) {
+                for (var cat in section.categories!) {
+                  if (cat.subCategories != null) {
+                    for (var s in cat.subCategories!) {
+                      if (s.uuId == sub.key && s.subCategoryImage != null && s.subCategoryImage!.isNotEmpty) {
+                        image = s.subCategoryImage;
+                        break;
+                      }
+                    }
+                  }
+                  if (image != null && image.isNotEmpty) break;
+                }
+              }
+              if (image != null && image.isNotEmpty) break;
+            }
           }
 
           if (image == null || image.isEmpty) {
@@ -1156,11 +1229,13 @@ class _GrocerySubCategoryProductsPageState
             onPressed: () {
               if (widget.category.slug != null) {
                 final loc = locationService.locationNotifier.value;
+                final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
                 context.read<CategoryProductsBloc>().add(
                   FetchProductsAndFiltersEvent(
                     homeTabId: widget.tabData.id,
                     homeTabUuId: widget.tabData.uuId,
-                    categorySlug: null,
+                    categorySlug: widget.category.slug,
+                    subCategoryUuId: firstSubUuid,
                     lat: loc?.lat ?? 0.0,
                     lng: loc?.lng ?? 0.0,
                     resetFilters: false,

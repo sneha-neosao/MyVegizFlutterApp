@@ -71,8 +71,11 @@ class ApiUrl {
     int? limit,
   }) {
     String url =
-        "$baseUrl/web/grocery-products/list-with-variants?page=${page ?? 1}&limit=${limit ?? 100}&sub_category_uuid=$subCategoryUuId";
+        "$baseUrl/web/grocery-products/list-with-variants?page=${page ?? 1}&limit=${limit ?? 100}";
 
+    if (subCategoryUuId.isNotEmpty) {
+      url += "&sub_category_uuid=$subCategoryUuId";
+    }
     if (homeTabId != null) {
       url += "&home_tab_id=$homeTabId";
     }

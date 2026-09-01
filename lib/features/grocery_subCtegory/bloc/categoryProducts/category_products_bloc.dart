@@ -57,13 +57,24 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
       await subCatsResult.fold(
         (failure) async {
           logger.e("📦 HomeTabSubCategories error: ${failure.message}");
-          emit(CategoryProductsError(failure.message));
+          if (event.categorySlug != null && event.categorySlug!.isNotEmpty) {
+            await _fetchUsingCategorySlug(event, emit);
+          } else {
+            emit(CategoryProductsError(failure.message));
+          }
         },
         (subCatsData) async {
           final subCatsList = subCatsData.data;
-          final targetSubUuid = (event.subCategoryUuId != null && event.subCategoryUuId!.isNotEmpty)
-              ? event.subCategoryUuId!
-              : (subCatsList.isNotEmpty ? subCatsList.first.uuId : '');
+
+          if (subCatsList.isEmpty && event.categorySlug != null && event.categorySlug!.isNotEmpty) {
+            await _fetchUsingCategorySlug(event, emit);
+            return;
+          }
+
+          final String firstSubKey = subCatsList.isNotEmpty ? subCatsList.first.uuId : '';
+          final String targetSubUuid = (event.resetFilters || event.subCategoryUuId == null || event.subCategoryUuId!.isEmpty)
+              ? firstSubKey
+              : (event.subCategoryUuId ?? firstSubKey);
 
           final filterOptions = subCatsList
               .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
@@ -74,7 +85,7 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
             lng: event.lng,
             subCategoryUuId: targetSubUuid,
             homeTabId: event.homeTabId,
-            categorySlug: null,
+            categorySlug: event.categorySlug,
             search: event.search,
           );
 
@@ -126,56 +137,7 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
         },
       );
     } else if (event.categorySlug != null && event.categorySlug!.isNotEmpty) {
-      final filtersResult = await getCategoryFiltersUseCase(categorySlug: event.categorySlug!);
-
-      await filtersResult.fold(
-        (failure) async {
-          logger.e("📦 CategoryFilters error: ${failure.message}");
-          emit(CategoryProductsError(failure.message));
-        },
-        (filtersData) async {
-          final targetSubUuid = (event.subCategoryUuId != null && event.subCategoryUuId!.isNotEmpty)
-              ? event.subCategoryUuId!
-              : (filtersData.data?.subCategories?.firstOrNull?.key ?? '');
-
-          final productsResult = await getCategoryProductsUseCase(
-            lat: event.lat,
-            lng: event.lng,
-            subCategoryUuId: targetSubUuid,
-            homeTabId: event.homeTabId,
-            categorySlug: event.categorySlug,
-            search: event.search,
-          );
-
-          productsResult.fold(
-            (failure) {
-              logger.w("📦 CategoryProducts notice: ${failure.message}");
-              emit(CategoryProductsLoaded(
-                categoryProductsResponse: CategoryProductsResponse(
-                  status: 300,
-                  message: failure.message,
-                  products: [],
-                ),
-                categoryFiltersResponse: filtersData,
-                selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
-                selectedTagUuId: null,
-                selectedSortBy: null,
-                isProductsLoading: false,
-              ));
-            },
-            (productsData) {
-              emit(CategoryProductsLoaded(
-                categoryProductsResponse: productsData,
-                categoryFiltersResponse: filtersData,
-                selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
-                selectedTagUuId: null,
-                selectedSortBy: null,
-                isProductsLoading: false,
-              ));
-            },
-          );
-        },
-      );
+      await _fetchUsingCategorySlug(event, emit);
     } else {
       final targetSubUuid = event.subCategoryUuId ?? '';
       final productsResult = await getCategoryProductsUseCase(
@@ -204,6 +166,63 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
         },
       );
     }
+  }
+
+  Future<void> _fetchUsingCategorySlug(
+    FetchProductsAndFiltersEvent event,
+    Emitter<CategoryProductsState> emit,
+  ) async {
+    final filtersResult = await getCategoryFiltersUseCase(categorySlug: event.categorySlug!);
+
+    await filtersResult.fold(
+      (failure) async {
+        logger.e("📦 CategoryFilters error: ${failure.message}");
+        emit(CategoryProductsError(failure.message));
+      },
+      (filtersData) async {
+        final firstSubFromFilters = filtersData.data?.subCategories?.firstOrNull?.key ?? '';
+        final targetSubUuid = (event.resetFilters || event.subCategoryUuId == null || event.subCategoryUuId!.isEmpty)
+            ? firstSubFromFilters
+            : (event.subCategoryUuId ?? firstSubFromFilters);
+
+        final productsResult = await getCategoryProductsUseCase(
+          lat: event.lat,
+          lng: event.lng,
+          subCategoryUuId: targetSubUuid,
+          homeTabId: event.homeTabId,
+          categorySlug: event.categorySlug,
+          search: event.search,
+        );
+
+        productsResult.fold(
+          (failure) {
+            logger.w("📦 CategoryProducts notice: ${failure.message}");
+            emit(CategoryProductsLoaded(
+              categoryProductsResponse: CategoryProductsResponse(
+                status: 300,
+                message: failure.message,
+                products: [],
+              ),
+              categoryFiltersResponse: filtersData,
+              selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+              selectedTagUuId: null,
+              selectedSortBy: null,
+              isProductsLoading: false,
+            ));
+          },
+          (productsData) {
+            emit(CategoryProductsLoaded(
+              categoryProductsResponse: productsData,
+              categoryFiltersResponse: filtersData,
+              selectedSubCategoryUuId: targetSubUuid.isNotEmpty ? targetSubUuid : null,
+              selectedTagUuId: null,
+              selectedSortBy: null,
+              isProductsLoading: false,
+            ));
+          },
+        );
+      },
+    );
   }
 
   void _onFilterSubCategoryChanged(
