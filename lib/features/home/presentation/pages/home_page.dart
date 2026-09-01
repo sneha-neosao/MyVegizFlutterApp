@@ -653,7 +653,10 @@ class _HomePageState extends State<HomePage> {
                       onRefresh: _onRefresh,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        child: _HomeBody(searchQuery: _searchQuery),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w),
+                          child: _HomeBody(searchQuery: _searchQuery),
+                        ),
                       ),
                     ),
                     bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
@@ -673,7 +676,7 @@ class _HomeShimmer extends StatelessWidget {
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.h),
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 6.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -686,7 +689,7 @@ class _HomeShimmer extends StatelessWidget {
                     height: 120.h,
                     borderRadius: 24.w,
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 12.h),
                   ShimmerPlaceholder.rounded(
                     height: 120.h,
                     borderRadius: 24.w,
@@ -694,7 +697,7 @@ class _HomeShimmer extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 24.h),
+            SizedBox(height: 12.h),
 
             // Section 1: What's on your mind? Shimmer
             Padding(
@@ -708,7 +711,7 @@ class _HomeShimmer extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 8.h),
             SizedBox(
               height: 110.h,
               child: ListView.builder(
@@ -733,14 +736,14 @@ class _HomeShimmer extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 24.h),
+            SizedBox(height: 12.h),
 
             // Divider Shimmer
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Divider(color: Colors.grey[100], thickness: 4),
+              child: Divider(color: Colors.grey[100], thickness: 4, height: 1),
             ),
-            SizedBox(height: 24.h),
+            SizedBox(height: 12.h),
 
             // Section 2: Groceries Shimmer
             Padding(
@@ -755,12 +758,12 @@ class _HomeShimmer extends StatelessWidget {
                       ShimmerPlaceholder.rounded(height: 15.h, width: 140.w),
                     ],
                   ),
-                  SizedBox(height: 10.h),
+                  SizedBox(height: 8.h),
                   ShimmerPlaceholder.rounded(height: 20.h, width: 240.w),
                 ],
               ),
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 8.h),
             SizedBox(
               height: 130.h,
               child: ListView.builder(
@@ -934,22 +937,23 @@ class _HomeBody extends StatelessWidget {
         CategoryCards(searchQuery: searchQuery),
 
         if (showFoodSection) ...[
-          SizedBox(height: 22.h),
+          SizedBox(height: 12.h),
           Section1Mind(searchQuery: searchQuery),
-          SizedBox(height: 6.h),
         ],
 
         // Horizontal Line Divider
-        if (searchQuery.isEmpty && showFoodSection && showGrocerySection)
+        if (searchQuery.isEmpty && showFoodSection && showGrocerySection) ...[
+          SizedBox(height: 12.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Divider(color: Colors.grey[200], thickness: 4),
+            child: Divider(color: Colors.grey[200], thickness: 4, height: 1),
           ),
+        ],
 
         if (showGrocerySection) ...[
-          if (searchQuery.isEmpty) SizedBox(height: 22.h),
+          SizedBox(height: 12.h),
           Section2Groceries(searchQuery: searchQuery),
-          SizedBox(height: 22.h),
+          SizedBox(height: 12.h),
         ],
       ]
           .animate(interval: 50.ms)

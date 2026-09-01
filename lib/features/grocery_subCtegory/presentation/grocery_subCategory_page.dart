@@ -6,6 +6,7 @@ import '../../../config/injector_conf.dart';
 import 'package:my_vegiz_flutter/features/grocery_category/widget/grocery_product_card.dart';
 import '../data/models/homePage_model.dart';
 import '../data/models/home_tab_sub_categories_model.dart';
+import '../data/models/sub_categories_by_category_model.dart';
 import '../data/models/category_filters_model.dart';
 import '../bloc/categoryProducts/category_products_bloc.dart';
 import '../bloc/categoryProducts/category_products_event.dart';
@@ -60,7 +61,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
   }
 
   void _handleInitialCategory() {
-    if (widget.initialCategorySlug != null) {
+    if (widget.initialCategorySlug != null && widget.initialCategorySlug!.isNotEmpty) {
       final categories =
           widget.tabData.homeSections
               ?.expand((sec) => sec.categories ?? <CategoryModel>[])
@@ -70,8 +71,15 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
         (cat) => cat.slug == widget.initialCategorySlug,
         orElse: () => CategoryModel(),
       );
-      if (match.id != null && match.slug != null) {
-        _navigateToProductsPage(match);
+      final targetCat = (match.id != null && match.slug != null)
+          ? match
+          : CategoryModel(
+              id: 0,
+              slug: widget.initialCategorySlug,
+              categoryName: widget.initialCategorySlug?.replaceAll('-', ' ').toUpperCase(),
+            );
+      if (targetCat.slug != null && targetCat.slug!.isNotEmpty) {
+        _navigateToProductsPage(targetCat);
       }
     }
   }
@@ -90,8 +98,8 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
               create: (context) => getIt<CategoryProductsBloc>()
                 ..add(
                   FetchProductsAndFiltersEvent(
-                    homeTabId: widget.tabData.id,
-                    homeTabUuId: widget.tabData.uuId,
+                    homeTabId: null,
+                    homeTabUuId: null,
                     categorySlug: cat.slug,
                     subCategoryUuId: firstSubUuid,
                     lat: lat,
@@ -722,6 +730,12 @@ class _GrocerySubCategoryProductsPageState
   Widget _buildSubCategorySidebar(CategoryProductsLoaded state) {
     List<FilterOption> subCategories = state.categoryFiltersResponse.data?.subCategories ?? [];
 
+    if (subCategories.isEmpty && state.subCategoriesByCategory != null && state.subCategoriesByCategory!.isNotEmpty) {
+      subCategories = state.subCategoriesByCategory!
+          .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
+          .toList();
+    }
+
     if (subCategories.isEmpty && state.homeTabSubCategories != null && state.homeTabSubCategories!.isNotEmpty) {
       subCategories = state.homeTabSubCategories!
           .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
@@ -764,6 +778,7 @@ class _GrocerySubCategoryProductsPageState
           .toList();
     }
 
+    final subCatsByCategory = state.subCategoriesByCategory ?? [];
     final homeTabSubs = state.homeTabSubCategories ?? [];
     final productsSubCategories =
         state.categoryProductsResponse.data?.subCategories ?? [];
@@ -784,7 +799,24 @@ class _GrocerySubCategoryProductsPageState
           final isSelected = activeSelectedKey == sub.key;
 
           String? image;
-          if (homeTabSubs.isNotEmpty) {
+          if (subCatsByCategory.isNotEmpty) {
+            final matched = subCatsByCategory.firstWhere(
+              (s) => s.uuId == sub.key || s.subCategoryUuid == sub.key,
+              orElse: () => SubCategoryByCategoryItemModel(
+                id: 0,
+                uuId: '',
+                subCategoryName: '',
+                slug: '',
+                isActive: true,
+                createdAt: '',
+              ),
+            );
+            if (matched.subCategoryImage != null && matched.subCategoryImage!.isNotEmpty) {
+              image = matched.subCategoryImage;
+            }
+          }
+
+          if ((image == null || image.isEmpty) && homeTabSubs.isNotEmpty) {
             final matched = homeTabSubs.firstWhere(
               (s) => s.uuId == sub.key,
               orElse: () => HomeTabSubCategoryItemModel(

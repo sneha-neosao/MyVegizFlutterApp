@@ -4,6 +4,7 @@ import '../../../../core/api/api/api_url.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../models/homePage_model.dart';
 import '../models/category_filters_model.dart';
+import '../models/sub_categories_by_category_model.dart';
 import '../../../../core/utils/logger.dart';
 
 abstract class CategoryProductsRemoteDataSource {
@@ -22,6 +23,12 @@ abstract class CategoryProductsRemoteDataSource {
 
   Future<CategoryFiltersResponse> fetchCategoryFilters({
     required String categorySlug,
+  });
+
+  Future<SubCategoriesByCategoryResponse> fetchSubCategoriesByCategory({
+    required String categorySlug,
+    int page = 1,
+    int limit = 10,
   });
 }
 
@@ -85,5 +92,21 @@ class CategoryProductsRemoteDataSourceImpl implements CategoryProductsRemoteData
 
     // logger.i("📡 API RESPONSE CategoryFilters");
     return CategoryFiltersResponse.fromJson(response);
+  }
+
+  @override
+  Future<SubCategoriesByCategoryResponse> fetchSubCategoriesByCategory({
+    required String categorySlug,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final url = ApiUrl.subCategoriesByCategory(
+      categorySlug: categorySlug,
+      page: page,
+      limit: limit,
+    );
+
+    final response = await apiHelper.execute(method: Method.get, url: url);
+    return SubCategoriesByCategoryResponse.fromJson(response);
   }
 }

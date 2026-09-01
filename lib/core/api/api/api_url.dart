@@ -76,7 +76,7 @@ class ApiUrl {
     if (subCategoryUuId.isNotEmpty) {
       url += "&sub_category_uuid=$subCategoryUuId";
     }
-    if (homeTabId != null) {
+    if (homeTabId != null && homeTabId > 0) {
       url += "&home_tab_id=$homeTabId";
     }
     if (categorySlug != null && categorySlug.isNotEmpty) {
@@ -97,6 +97,13 @@ class ApiUrl {
 
   static String categoryFilters({required String categorySlug}) =>
       "$baseUrl/web/homepage/category/filters?category_slug=$categorySlug";
+
+  static String subCategoriesByCategory({
+    required String categorySlug,
+    int page = 1,
+    int limit = 10,
+  }) =>
+      "$baseUrl/web/sub_categories/by-category?category_slug=$categorySlug&page=$page&limit=$limit";
 
   static String searchGroceryProducts({
     required String query,

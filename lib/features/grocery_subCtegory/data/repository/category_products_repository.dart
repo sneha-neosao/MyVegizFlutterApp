@@ -3,6 +3,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/api/api/api_exception.dart';
 import '../models/homePage_model.dart';
 import '../models/category_filters_model.dart';
+import '../models/sub_categories_by_category_model.dart';
 import '../datasources/category_products_remote_datasource.dart';
 
 abstract class CategoryProductsRepository {
@@ -21,6 +22,12 @@ abstract class CategoryProductsRepository {
 
   Future<Either<Failure, CategoryFiltersResponse>> fetchCategoryFilters({
     required String categorySlug,
+  });
+
+  Future<Either<Failure, SubCategoriesByCategoryResponse>> fetchSubCategoriesByCategory({
+    required String categorySlug,
+    int page = 1,
+    int limit = 10,
   });
 }
 
@@ -82,6 +89,32 @@ class CategoryProductsRepositoryImpl implements CategoryProductsRepository {
       } else {
         return Left(
           ServerFailure(data.message ?? "Failed to fetch category filters"),
+        );
+      }
+    } on ApiException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SubCategoriesByCategoryResponse>> fetchSubCategoriesByCategory({
+    required String categorySlug,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      final data = await remoteDataSource.fetchSubCategoriesByCategory(
+        categorySlug: categorySlug,
+        page: page,
+        limit: limit,
+      );
+      if (data.status == 200 || data.status == 201) {
+        return Right(data);
+      } else {
+        return Left(
+          ServerFailure(data.message.isNotEmpty ? data.message : "Failed to fetch sub-categories"),
         );
       }
     } on ApiException catch (e) {

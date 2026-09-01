@@ -71,6 +71,7 @@ import '../features/grocery_subCtegory/data/datasources/category_products_remote
 import '../features/grocery_subCtegory/data/repository/category_products_repository.dart';
 import '../features/grocery_subCtegory/usecases/get_category_products_usecase.dart';
 import '../features/grocery_subCtegory/usecases/get_category_filters_usecase.dart';
+import '../features/grocery_subCtegory/usecases/get_sub_categories_by_category_usecase.dart';
 import '../features/grocery_subCtegory/bloc/categoryProducts/category_products_bloc.dart';
 
 import '../features/address/bloc/address_bloc.dart';
@@ -240,12 +241,14 @@ void configureDependencies() {
 
   getIt.registerLazySingleton(() => GetCategoryProductsUseCase(getIt()));
   getIt.registerLazySingleton(() => GetCategoryFiltersUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetSubCategoriesByCategoryUseCase(getIt()));
 
   getIt.registerFactory(
     () => CategoryProductsBloc(
       getCategoryProductsUseCase: getIt(),
       getCategoryFiltersUseCase: getIt(),
       getHomeTabSubCategoriesUseCase: getIt(),
+      getSubCategoriesByCategoryUseCase: getIt(),
     ),
   );
 
