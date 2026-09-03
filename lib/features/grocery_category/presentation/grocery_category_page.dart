@@ -374,23 +374,13 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
     final loc = locationService.locationNotifier.value;
     final lat = loc?.lat ?? 0.0;
     final lng = loc?.lng ?? 0.0;
-    final categorySlug = card.slug ?? '';
-
-    final firstCategory = card.homeSections
-        ?.expand((s) => s.categories ?? <CategoryModel>[])
-        .firstOrNull;
-    final firstSubCategoryUuId = firstCategory?.subCategories?.firstOrNull?.uuId;
-    final effectiveSlug = categorySlug.isNotEmpty
-        ? categorySlug
-        : (firstCategory?.slug ?? '');
 
     final catModel = CategoryModel(
       id: card.id,
       uuId: card.uuId,
       categoryName: card.tabName,
-      slug: effectiveSlug,
+      slug: card.slug,
       categoryImage: card.homeIcon,
-      subCategories: firstCategory?.subCategories,
     );
 
     Navigator.of(context).push(
@@ -401,10 +391,10 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
               create: (context) => getIt<CategoryProductsBloc>()
                 ..add(
                   FetchProductsAndFiltersEvent(
-                    homeTabId: card.id,
+                    homeTabId: null,
                     homeTabUuId: card.uuId,
-                    categorySlug: effectiveSlug.isNotEmpty ? effectiveSlug : null,
-                    subCategoryUuId: firstSubCategoryUuId,
+                    categorySlug: null,
+                    subCategoryUuId: null,
                     lat: lat,
                     lng: lng,
                     resetFilters: true,
@@ -412,7 +402,7 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
                 ),
             ),
           ],
-          child: GrocerySubCategoryProductsPage(
+          child: HomeTabSubcategoryProductPage(
             category: catModel,
             tabData: card,
             searchQuery: _searchQuery,

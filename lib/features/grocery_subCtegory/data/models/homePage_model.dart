@@ -330,8 +330,7 @@ class ProductModel {
       categoryUuId: json['category_uu_id'],
       subCategoryId: json['sub_category_id'] as int?,
       subCategoryName: json['sub_category_name'],
-      subCategorySlug: json['sub_category_slug'],
-      subCategoryUuId: json['sub_category_uu_id'],
+      subCategoryUuId: json['sub_category_uu_id'] ?? json['sub_category_uuid'],
       productImage: json['product_image'] ??
           (() {
             final List? imgs = json['images'] as List?;

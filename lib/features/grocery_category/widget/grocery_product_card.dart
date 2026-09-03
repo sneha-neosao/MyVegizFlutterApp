@@ -160,7 +160,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
         color: Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             // ── TOP SECTION: Image + Blueish Weight & Action Bar (Clean Rounded Card) ──
             Container(

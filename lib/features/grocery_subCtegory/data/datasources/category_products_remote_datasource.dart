@@ -62,8 +62,7 @@ class CategoryProductsRemoteDataSourceImpl implements CategoryProductsRemoteData
       page: page,
       limit: limit,
     );
-    // logger.i("🌐 API CALL → CategoryProducts");
-    // logger.d("URL: $url");
+    logger.i("🌐 API CALL → CategoryProducts URL: $url");
 
     final token = await SecureStorage.getAccessToken();
     final options = token != null
@@ -76,7 +75,7 @@ class CategoryProductsRemoteDataSourceImpl implements CategoryProductsRemoteData
       options: options,
     );
 
-    // logger.i("📡 API RESPONSE CategoryProducts");
+    logger.i("📡 API RESPONSE CategoryProducts status: ${response['status']}, count: ${response['data'] is List ? (response['data'] as List).length : (response['products'] is List ? (response['products'] as List).length : 'N/A')}");
     return CategoryProductsResponse.fromJson(response);
   }
 

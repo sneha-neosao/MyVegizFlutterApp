@@ -2,8 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/models/category_filters_model.dart';
 import '../../data/models/homePage_model.dart';
-import '../../data/models/home_tab_sub_categories_model.dart';
-import '../../data/models/sub_categories_by_category_model.dart';
 import '../../usecases/get_category_products_usecase.dart';
 import '../../usecases/get_category_filters_usecase.dart';
 import '../../usecases/get_home_tab_sub_categories_usecase.dart';
@@ -84,13 +82,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
               .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
               .toList();
 
+          // Home Tab flow: Call grocery-products/list-with-variants sending only subcategory uuid, page, limit, lat, lng
           final productsResult = await getCategoryProductsUseCase(
             lat: event.lat,
             lng: event.lng,
             subCategoryUuId: targetSubUuid,
-            homeTabId: event.homeTabId,
-            categorySlug: event.categorySlug,
-            search: event.search,
+            homeTabId: null,
+            categorySlug: null,
+            search: null,
+            page: 1,
+            limit: 100,
           );
 
           productsResult.fold(
@@ -205,9 +206,11 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
               lat: event.lat,
               lng: event.lng,
               subCategoryUuId: targetSubUuid,
-              homeTabId: event.homeTabId,
-              categorySlug: event.categorySlug,
-              search: event.search,
+              homeTabId: null,
+              categorySlug: null,
+              search: null,
+              page: 1,
+              limit: 100,
             );
 
             productsResult.fold(
@@ -265,13 +268,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
                 ))
             .toList();
 
+        // Category Subcategory flow: Call grocery-products/list-with-variants sending only subcategory uuid, page, limit, lat, lng
         final productsResult = await getCategoryProductsUseCase(
           lat: event.lat,
           lng: event.lng,
           subCategoryUuId: targetSubUuid,
-          homeTabId: event.homeTabId,
-          categorySlug: effectiveCatSlug.isNotEmpty ? effectiveCatSlug : event.categorySlug,
-          search: event.search,
+          homeTabId: null,
+          categorySlug: null,
+          search: null,
+          page: 1,
+          limit: 100,
         );
 
         productsResult.fold(
@@ -392,9 +398,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     final String? tagId = tagUuId ?? currentState.selectedTagUuId;
     final String? sort = sortBy ?? currentState.selectedSortBy;
 
+    final bool isHomeTabFlow = _currentHomeTabUuId != null && _currentHomeTabUuId!.isNotEmpty;
+
     // Resolve categorySlug if subCategoriesByCategory is present
     String? effectiveCategorySlug = _currentCategorySlug;
-    if (currentState.subCategoriesByCategory != null && currentState.subCategoriesByCategory!.isNotEmpty) {
+    int? effectiveHomeTabId = _currentHomeTabId;
+    if (isHomeTabFlow) {
+      // Per user flow: Home Tab only sends subCategoryUuId, page, limit, lat, lng
+      effectiveCategorySlug = null;
+      effectiveHomeTabId = null;
+    } else if (currentState.subCategoriesByCategory != null && currentState.subCategoriesByCategory!.isNotEmpty) {
       final matchingSub = currentState.subCategoriesByCategory!.firstWhere(
         (s) => s.uuId == subId || s.subCategoryUuid == subId,
         orElse: () => currentState.subCategoriesByCategory!.first,
@@ -402,19 +415,19 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
       if (matchingSub.categorySlug != null && matchingSub.categorySlug!.isNotEmpty) {
         effectiveCategorySlug = matchingSub.categorySlug;
       }
-    } else if (_currentHomeTabUuId != null && _currentHomeTabUuId!.isNotEmpty) {
-      effectiveCategorySlug = null;
     }
 
     final result = await getCategoryProductsUseCase(
       lat: _currentLat!,
       lng: _currentLng!,
       subCategoryUuId: subId,
-      homeTabId: _currentHomeTabId,
-      categorySlug: effectiveCategorySlug,
-      search: _currentSearch,
-      tagUuId: tagId,
-      sortBy: sort,
+      homeTabId: null,
+      categorySlug: null,
+      search: null,
+      tagUuId: null,
+      sortBy: null,
+      page: 1,
+      limit: 100,
     );
 
     result.fold(

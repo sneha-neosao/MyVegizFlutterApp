@@ -20,9 +20,8 @@ import '../widgets/grocery_banner_slider.dart';
 import 'package:my_vegiz_flutter/features/cart/bloc/cart_bloc.dart';
 import 'package:my_vegiz_flutter/features/cart/bloc/cart_state.dart';
 import 'package:my_vegiz_flutter/features/cart/data/models/cart_model.dart';
-import 'category_subCategory_page.dart';
 
-class GrocerySubCategoryPage extends StatefulWidget {
+class CategorySubcategoryPage extends StatefulWidget {
   final HomeTabModel tabData;
   final Future<void> Function()? onRefresh;
   final String? initialCategorySlug;
@@ -32,7 +31,7 @@ class GrocerySubCategoryPage extends StatefulWidget {
   final Widget? pinnedHeader;
   final double? pinnedHeaderHeight;
 
-  const GrocerySubCategoryPage({
+  const CategorySubcategoryPage({
     super.key,
     required this.tabData,
     this.onRefresh,
@@ -45,10 +44,10 @@ class GrocerySubCategoryPage extends StatefulWidget {
   });
 
   @override
-  State<GrocerySubCategoryPage> createState() => _GrocerySubCategoryPageState();
+  State<CategorySubcategoryPage> createState() => _CategorySubcategoryPageState();
 }
 
-class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
+class _CategorySubcategoryPageState extends State<CategorySubcategoryPage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -209,11 +208,11 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
         }
         if (widget.activeFilter == 'veg') {
           filteredProds = filteredProds
-              .where((p) => _isGroceryProductVeg(p.productName ?? ''))
+              .where((p) => _isCategoryProductVeg(p.productName ?? ''))
               .toList();
         } else if (widget.activeFilter == 'nonveg') {
           filteredProds = filteredProds
-              .where((p) => !_isGroceryProductVeg(p.productName ?? ''))
+              .where((p) => !_isCategoryProductVeg(p.productName ?? ''))
               .toList();
         }
         if (filteredProds.isNotEmpty) {
@@ -484,7 +483,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
 
 // ── Private Top-level Helpers ──────────────────────────────────────────────────
 
-bool _isGroceryProductVeg(String productName) {
+bool _isCategoryProductVeg(String productName) {
   final name = productName.toLowerCase();
   final nonVegKeywords = [
     'chicken',
@@ -513,16 +512,16 @@ bool _isGroceryProductVeg(String productName) {
   return true;
 }
 
-// ── HomeTabSubcategoryProductPage ─────────────────────────────────────────────
+// ── CategorySubcategoryProductPage ─────────────────────────────────────────────
 
-class HomeTabSubcategoryProductPage extends StatefulWidget {
+class CategorySubcategoryProductPage extends StatefulWidget {
   final CategoryModel category;
   final HomeTabModel tabData;
   final String searchQuery;
   final String activeFilter;
   final Future<void> Function()? onRefresh;
 
-  const HomeTabSubcategoryProductPage({
+  const CategorySubcategoryProductPage({
     super.key,
     required this.category,
     required this.tabData,
@@ -532,12 +531,12 @@ class HomeTabSubcategoryProductPage extends StatefulWidget {
   });
 
   @override
-  State<HomeTabSubcategoryProductPage> createState() =>
-      _HomeTabSubcategoryProductPageState();
+  State<CategorySubcategoryProductPage> createState() =>
+      _CategorySubcategoryProductPageState();
 }
 
-class _HomeTabSubcategoryProductPageState
-    extends State<HomeTabSubcategoryProductPage> {
+class _CategorySubcategoryProductPageState
+    extends State<CategorySubcategoryProductPage> {
   SubCategoryModel? selectedSubCategory;
 
   @override
@@ -545,19 +544,19 @@ class _HomeTabSubcategoryProductPageState
     return BlocListener<CartBloc, CartState>(
       listener: (context, state) {
         if (state is CartActionSuccess) {
-          logger.i('🛒 HomeTabSubcategoryProductPage: CartActionSuccess detected! Re-fetching product list.');
+          logger.i('🛒 CategorySubcategoryProductPage: CartActionSuccess detected! Re-fetching product list.');
           final prodBloc = context.read<CategoryProductsBloc>();
           final prodState = prodBloc.state;
           if (prodState is CategoryProductsLoaded) {
             prodBloc.add(FilterSubCategoryChangedEvent(prodState.selectedSubCategoryUuId));
-          } else {
+          } else if (widget.category.slug != null) {
             final loc = locationService.locationNotifier.value;
             final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
             prodBloc.add(
               FetchProductsAndFiltersEvent(
                 homeTabId: null,
-                homeTabUuId: widget.tabData.uuId,
-                categorySlug: null,
+                homeTabUuId: null,
+                categorySlug: widget.category.slug,
                 subCategoryUuId: firstSubUuid,
                 lat: loc?.lat ?? 0.0,
                 lng: loc?.lng ?? 0.0,
@@ -697,19 +696,21 @@ class _HomeTabSubcategoryProductPageState
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              final loc = locationService.locationNotifier.value;
-              final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
-              context.read<CategoryProductsBloc>().add(
-                FetchProductsAndFiltersEvent(
-                  homeTabId: null,
-                  homeTabUuId: widget.tabData.uuId,
-                  categorySlug: null,
-                  subCategoryUuId: firstSubUuid,
-                  lat: loc?.lat ?? 0.0,
-                  lng: loc?.lng ?? 0.0,
-                  resetFilters: true,
-                ),
-              );
+              if (widget.category.slug != null) {
+                final loc = locationService.locationNotifier.value;
+                final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
+                context.read<CategoryProductsBloc>().add(
+                  FetchProductsAndFiltersEvent(
+                    homeTabId: null,
+                    homeTabUuId: null,
+                    categorySlug: widget.category.slug,
+                    subCategoryUuId: firstSubUuid,
+                    lat: loc?.lat ?? 0.0,
+                    lng: loc?.lng ?? 0.0,
+                    resetFilters: true,
+                  ),
+                );
+              }
             },
             child: const Text('Retry'),
           ),
@@ -721,14 +722,17 @@ class _HomeTabSubcategoryProductPageState
   Widget _buildSubCategorySidebar(CategoryProductsLoaded state) {
     List<FilterOption> subCategories = [];
 
-    if (state.homeTabSubCategories != null && state.homeTabSubCategories!.isNotEmpty) {
-      subCategories = state.homeTabSubCategories!
-          .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
+    if (state.subCategoriesByCategory != null && state.subCategoriesByCategory!.isNotEmpty) {
+      subCategories = state.subCategoriesByCategory!
+          .map((s) => FilterOption(
+                key: (s.subCategoryUuid != null && s.subCategoryUuid!.isNotEmpty) ? s.subCategoryUuid! : s.uuId,
+                label: s.subCategoryName,
+              ))
           .toList();
     } else if (state.categoryFiltersResponse.data?.subCategories != null && state.categoryFiltersResponse.data!.subCategories!.isNotEmpty) {
       subCategories = state.categoryFiltersResponse.data!.subCategories!;
-    } else if (state.subCategoriesByCategory != null && state.subCategoriesByCategory!.isNotEmpty) {
-      subCategories = state.subCategoriesByCategory!
+    } else if (state.homeTabSubCategories != null && state.homeTabSubCategories!.isNotEmpty) {
+      subCategories = state.homeTabSubCategories!
           .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
           .toList();
     }
@@ -790,10 +794,10 @@ class _HomeTabSubcategoryProductPageState
           final isSelected = activeSelectedKey == sub.key;
 
           String? image;
-          if (homeTabSubs.isNotEmpty) {
-            final matched = homeTabSubs.firstWhere(
-              (s) => s.uuId == sub.key,
-              orElse: () => HomeTabSubCategoryItemModel(
+          if (subCatsByCategory.isNotEmpty) {
+            final matched = subCatsByCategory.firstWhere(
+              (s) => s.uuId == sub.key || s.subCategoryUuid == sub.key,
+              orElse: () => SubCategoryByCategoryItemModel(
                 id: 0,
                 uuId: '',
                 subCategoryName: '',
@@ -807,10 +811,10 @@ class _HomeTabSubcategoryProductPageState
             }
           }
 
-          if ((image == null || image.isEmpty) && subCatsByCategory.isNotEmpty) {
-            final matched = subCatsByCategory.firstWhere(
-              (s) => s.uuId == sub.key || s.subCategoryUuid == sub.key,
-              orElse: () => SubCategoryByCategoryItemModel(
+          if ((image == null || image.isEmpty) && homeTabSubs.isNotEmpty) {
+            final matched = homeTabSubs.firstWhere(
+              (s) => s.uuId == sub.key,
+              orElse: () => HomeTabSubCategoryItemModel(
                 id: 0,
                 uuId: '',
                 subCategoryName: '',
@@ -1166,11 +1170,11 @@ class _HomeTabSubcategoryProductPageState
 
     if (widget.activeFilter == 'veg') {
       products = products
-          .where((p) => _isGroceryProductVeg(p.productName ?? ''))
+          .where((p) => _isCategoryProductVeg(p.productName ?? ''))
           .toList();
     } else if (widget.activeFilter == 'nonveg') {
       products = products
-          .where((p) => !_isGroceryProductVeg(p.productName ?? ''))
+          .where((p) => !_isCategoryProductVeg(p.productName ?? ''))
           .toList();
     }
 
@@ -1252,19 +1256,21 @@ class _HomeTabSubcategoryProductPageState
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              final loc = locationService.locationNotifier.value;
-              final activeSubUuid = state.selectedSubCategoryUuId;
-              context.read<CategoryProductsBloc>().add(
-                FetchProductsAndFiltersEvent(
-                  homeTabId: null,
-                  homeTabUuId: widget.tabData.uuId,
-                  categorySlug: null,
-                  subCategoryUuId: activeSubUuid,
-                  lat: loc?.lat ?? 0.0,
-                  lng: loc?.lng ?? 0.0,
-                  resetFilters: false,
-                ),
-              );
+              if (widget.category.slug != null) {
+                final loc = locationService.locationNotifier.value;
+                final activeSubUuid = state.selectedSubCategoryUuId;
+                context.read<CategoryProductsBloc>().add(
+                  FetchProductsAndFiltersEvent(
+                    homeTabId: null,
+                    homeTabUuId: null,
+                    categorySlug: widget.category.slug,
+                    subCategoryUuId: activeSubUuid,
+                    lat: loc?.lat ?? 0.0,
+                    lng: loc?.lng ?? 0.0,
+                    resetFilters: false,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFC8019),
