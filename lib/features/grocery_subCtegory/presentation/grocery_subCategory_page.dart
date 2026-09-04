@@ -407,6 +407,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
             cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
             variants: product.variants ?? [],
             isWishlisted: product.isWishlisted ?? false,
+            isDeliverable: product.isDeliverable,
             productCartQuantity: product.cartQuantity ?? 0,
             tags: product.tags,
           );
@@ -469,6 +470,7 @@ class _GrocerySubCategoryPageState extends State<GrocerySubCategoryPage>
                     cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
                     variants: product.variants ?? [],
                     isWishlisted: product.isWishlisted ?? false,
+                    isDeliverable: product.isDeliverable,
                     productCartQuantity: product.cartQuantity ?? 0,
                     tags: product.tags,
                   ),
@@ -1239,6 +1241,7 @@ class _HomeTabSubcategoryProductPageState
           cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
           variants: product.variants ?? [],
           isWishlisted: product.isWishlisted ?? false,
+          isDeliverable: product.isDeliverable,
           productCartQuantity: product.cartQuantity ?? 0,
           siblingProducts: products
               .map((p) => {

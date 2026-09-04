@@ -406,6 +406,7 @@ class _CategorySubcategoryPageState extends State<CategorySubcategoryPage>
             cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
             variants: product.variants ?? [],
             isWishlisted: product.isWishlisted ?? false,
+            isDeliverable: product.isDeliverable,
             productCartQuantity: product.cartQuantity ?? 0,
             tags: product.tags,
           );
@@ -468,6 +469,7 @@ class _CategorySubcategoryPageState extends State<CategorySubcategoryPage>
                     cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
                     variants: product.variants ?? [],
                     isWishlisted: product.isWishlisted ?? false,
+                    isDeliverable: product.isDeliverable,
                     productCartQuantity: product.cartQuantity ?? 0,
                     tags: product.tags,
                   ),
@@ -1243,6 +1245,7 @@ class _CategorySubcategoryProductPageState
           cartQuantity: product.variants?.firstOrNull?.cartQuantity ?? 0,
           variants: product.variants ?? [],
           isWishlisted: product.isWishlisted ?? false,
+          isDeliverable: product.isDeliverable,
           productCartQuantity: product.cartQuantity ?? 0,
           siblingProducts: products
               .map((p) => {

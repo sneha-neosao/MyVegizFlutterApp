@@ -113,6 +113,7 @@ class _WishlistPageState extends State<WishlistPage> {
                   variantId: selectedVariant.id,
                   variants: product.variants,
                   isWishlisted: product.isSaved,
+                  isDeliverable: product.isDeliverable,
                   cartQuantity: selectedVariant.cartQuantity,
                   productCartQuantity: productCartQty,
                 )

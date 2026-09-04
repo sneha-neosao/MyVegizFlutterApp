@@ -25,6 +25,7 @@ class WishlistItemModel {
   final List<SharedVariantModel> variants;
   final SharedRatingModel? rating;
   final int productViews;
+  final bool? isDeliverable;
   final int? productVariantId;
 
   WishlistItemModel({
@@ -38,6 +39,7 @@ class WishlistItemModel {
     required this.variants,
     this.rating,
     this.productViews = 0,
+    this.isDeliverable,
     this.productVariantId,
   });
 
@@ -69,6 +71,13 @@ class WishlistItemModel {
       );
     }
 
+    final rawDeliverable = productJson['is_deliverable'] ?? json['is_deliverable'];
+    final bool? isDeliv = rawDeliverable == null
+        ? null
+        : (rawDeliverable is bool
+            ? rawDeliverable
+            : (rawDeliverable == 1 || rawDeliverable == '1' || rawDeliverable == 'true'));
+
     return WishlistItemModel(
       favouriteId: json['favourite_id'] ?? json['id'] ?? 0,
       productId: productJson['id'] ?? productJson['product_id'] ?? json['product_id'] ?? 0,
@@ -84,6 +93,7 @@ class WishlistItemModel {
           : [],
       rating: parsedRating,
       productViews: (productJson['product_views'] as num?)?.toInt() ?? (productJson['views'] as num?)?.toInt() ?? 0,
+      isDeliverable: isDeliv,
       productVariantId: json['product_variant_id'] as int?,
     );
   }

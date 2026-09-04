@@ -342,9 +342,13 @@ class ProductModel {
             return primary is Map ? primary['product_image'] : null;
           })(),
       isActive: json['is_active'],
-      isDeliverable: (json['is_deliverable'] is bool)
-          ? json['is_deliverable'] as bool
-          : (json['is_deliverable'] == 1 || json['is_deliverable'] == '1' || json['is_deliverable'] == 'true'),
+      isDeliverable: json['is_deliverable'] == null
+          ? null
+          : ((json['is_deliverable'] is bool)
+              ? json['is_deliverable'] as bool
+              : (json['is_deliverable'] == 1 ||
+                 json['is_deliverable'] == '1' ||
+                 json['is_deliverable'] == 'true')),
       isWishlisted: json['is_wishlisted'] as bool?,
       cartQuantity: (json['cart_quantity'] as num?)?.toInt(),
       variants: json['variants'] != null

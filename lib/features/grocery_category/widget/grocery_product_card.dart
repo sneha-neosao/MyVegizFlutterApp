@@ -174,10 +174,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
     final productId = widget.productId;
     final firstVariant = widget.variants.isNotEmpty ? widget.variants.first : null;
     final primaryVariantLabel = firstVariant != null ? _variantLabel(firstVariant) : '';
-    final hasAnyDeliverable = (widget.isDeliverable ?? true) &&
-        (widget.variants.isNotEmpty
-            ? widget.variants.any((v) => v.isDeliverable && (v.sellingPrice ?? 0) > 0)
-            : (widget.price > 0 && widget.variantId != null));
+    final hasAnyDeliverable = widget.isDeliverable ?? true;
 
     return GestureDetector(
       onTap: () {
