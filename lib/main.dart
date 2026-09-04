@@ -165,7 +165,7 @@ class MyViggiesApp extends StatelessWidget {
       ],
 
       child: MaterialApp.router(
-        title: 'MyViggies',
+        title: 'My Vegiz',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: colorScheme,
