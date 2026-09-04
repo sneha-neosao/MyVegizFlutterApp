@@ -75,7 +75,7 @@ class ApiUrl {
     String url =
         "$baseUrl/web/grocery-products/list-with-variants?page=${page ?? 1}&limit=${limit ?? 100}";
 
-    if (subCategoryUuId.isNotEmpty) {
+    if (subCategoryUuId.isNotEmpty && subCategoryUuId.toLowerCase() != 'all') {
       url += "&sub_category_uuid=$subCategoryUuId";
     }
     if (homeTabId != null && homeTabId > 0) {

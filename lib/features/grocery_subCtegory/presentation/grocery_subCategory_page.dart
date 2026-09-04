@@ -557,7 +557,7 @@ class _HomeTabSubcategoryProductPageState
             final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
             prodBloc.add(
               FetchProductsAndFiltersEvent(
-                homeTabId: null,
+                homeTabId: widget.tabData.id,
                 homeTabUuId: widget.tabData.uuId,
                 categorySlug: null,
                 subCategoryUuId: firstSubUuid,
@@ -713,7 +713,7 @@ class _HomeTabSubcategoryProductPageState
               final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
               context.read<CategoryProductsBloc>().add(
                 FetchProductsAndFiltersEvent(
-                  homeTabId: null,
+                  homeTabId: widget.tabData.id,
                   homeTabUuId: widget.tabData.uuId,
                   categorySlug: null,
                   subCategoryUuId: firstSubUuid,
@@ -786,8 +786,12 @@ class _HomeTabSubcategoryProductPageState
     final productsSubCategories =
         state.categoryProductsResponse.data?.subCategories ?? [];
 
-    final String? activeSelectedKey = state.selectedSubCategoryUuId ??
-        (subCategories.isNotEmpty ? subCategories.first.key : null);
+    final List<FilterOption> finalSubCategories = [
+      FilterOption(key: 'all', label: 'All'),
+      ...subCategories.where((s) => s.key != 'all'),
+    ];
+
+    final String activeSelectedKey = state.selectedSubCategoryUuId ?? 'all';
 
     return Container(
       width: 68.w,
@@ -796,13 +800,15 @@ class _HomeTabSubcategoryProductPageState
         border: Border(right: BorderSide(color: Colors.grey.shade200)),
       ),
       child: ListView.builder(
-        itemCount: subCategories.length,
+        itemCount: finalSubCategories.length,
         itemBuilder: (context, index) {
-          final sub = subCategories[index];
-          final isSelected = activeSelectedKey == sub.key;
+          final sub = finalSubCategories[index];
+          final isSelected = activeSelectedKey == sub.key || (activeSelectedKey == 'all' && sub.key == 'all');
 
           String? image;
-          if (homeTabSubs.isNotEmpty) {
+          if (sub.key == 'all') {
+            image = widget.category.categoryImage;
+          } else if (homeTabSubs.isNotEmpty) {
             final matched = homeTabSubs.firstWhere(
               (s) => s.uuId == sub.key,
               orElse: () => HomeTabSubCategoryItemModel(
@@ -819,7 +825,7 @@ class _HomeTabSubcategoryProductPageState
             }
           }
 
-          if ((image == null || image.isEmpty) && subCatsByCategory.isNotEmpty) {
+          if ((image == null || image.isEmpty) && subCatsByCategory.isNotEmpty && sub.key != 'all') {
             final matched = subCatsByCategory.firstWhere(
               (s) => s.uuId == sub.key || s.subCategoryUuid == sub.key,
               orElse: () => SubCategoryByCategoryItemModel(
@@ -836,7 +842,7 @@ class _HomeTabSubcategoryProductPageState
             }
           }
 
-          if ((image == null || image.isEmpty) && widget.tabData.homeSections != null) {
+          if ((image == null || image.isEmpty) && widget.tabData.homeSections != null && sub.key != 'all') {
             for (var section in widget.tabData.homeSections!) {
               if (section.categories != null) {
                 for (var cat in section.categories!) {
@@ -855,7 +861,7 @@ class _HomeTabSubcategoryProductPageState
             }
           }
 
-          if (image == null || image.isEmpty) {
+          if ((image == null || image.isEmpty) && sub.key != 'all') {
             final matchedSub = widget.category.subCategories?.firstWhere(
                   (psub) => psub.uuId == sub.key,
                   orElse: () => productsSubCategories.firstWhere(
@@ -926,29 +932,38 @@ class _HomeTabSubcategoryProductPageState
                               ],
                             ),
                             child: ClipOval(
-                              child: (image != null && image.isNotEmpty)
-                                  ? Image.network(
-                                      image,
-                                      width: 46.w,
-                                      height: 46.w,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        color: Colors.white,
-                                        child: Icon(
-                                          Icons.category_outlined,
-                                          size: 20.w,
-                                          color: Colors.grey.shade400,
-                                        ),
+                              child: (sub.key == 'all' && (image == null || image.isEmpty))
+                                  ? Container(
+                                      color: isSelected ? const Color(0xFFEAF7EE) : Colors.grey.shade100,
+                                      child: Icon(
+                                        Icons.grid_view_rounded,
+                                        size: 20.w,
+                                        color: isSelected ? const Color(0xFF03B875) : Colors.grey.shade600,
                                       ),
                                     )
-                                  : Container(
-                                      color: Colors.white,
-                                      child: Icon(
-                                        Icons.category_outlined,
-                                        size: 20.w,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                    ),
+                                  : ((image != null && image.isNotEmpty)
+                                      ? Image.network(
+                                          image,
+                                          width: 46.w,
+                                          height: 46.w,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Container(
+                                            color: isSelected ? const Color(0xFFEAF7EE) : Colors.white,
+                                            child: Icon(
+                                              sub.key == 'all' ? Icons.grid_view_rounded : Icons.category_outlined,
+                                              size: 20.w,
+                                              color: isSelected ? const Color(0xFF03B875) : Colors.grey.shade400,
+                                            ),
+                                          ),
+                                        )
+                                      : Container(
+                                          color: isSelected ? const Color(0xFFEAF7EE) : Colors.white,
+                                          child: Icon(
+                                            sub.key == 'all' ? Icons.grid_view_rounded : Icons.category_outlined,
+                                            size: 20.w,
+                                            color: isSelected ? const Color(0xFF03B875) : Colors.grey.shade400,
+                                          ),
+                                        )),
                             ),
                           ),
                           SizedBox(height: 6.h),
@@ -1135,7 +1150,7 @@ class _HomeTabSubcategoryProductPageState
       products.addAll(state.categoryProductsResponse.products!);
     } else if (state.categoryProductsResponse.data?.subCategories != null) {
       for (final sub in state.categoryProductsResponse.data!.subCategories!) {
-        if (activeSubUuid == null || sub.uuId == activeSubUuid) {
+        if (activeSubUuid == null || activeSubUuid == 'all' || sub.uuId == activeSubUuid) {
           if (sub.products != null) {
             products.addAll(sub.products!);
           }
@@ -1145,6 +1160,7 @@ class _HomeTabSubcategoryProductPageState
 
     // Only filter by subcategory client-side if products have explicit subCategoryUuId populated
     if (activeSubUuid != null &&
+        activeSubUuid != 'all' &&
         products.any((p) => p.subCategoryUuId != null && p.subCategoryUuId!.isNotEmpty)) {
       final filtered = products.where((p) => p.subCategoryUuId == activeSubUuid).toList();
       if (filtered.isNotEmpty) {
@@ -1284,7 +1300,7 @@ class _HomeTabSubcategoryProductPageState
               final activeSubUuid = state.selectedSubCategoryUuId;
               context.read<CategoryProductsBloc>().add(
                 FetchProductsAndFiltersEvent(
-                  homeTabId: null,
+                  homeTabId: widget.tabData.id,
                   homeTabUuId: widget.tabData.uuId,
                   categorySlug: null,
                   subCategoryUuId: activeSubUuid,

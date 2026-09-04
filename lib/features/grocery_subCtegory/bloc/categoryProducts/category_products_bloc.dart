@@ -39,10 +39,10 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     FetchProductsAndFiltersEvent event,
     Emitter<CategoryProductsState> emit,
   ) async {
-    _currentHomeTabId = event.homeTabId;
-    _currentHomeTabUuId = event.homeTabUuId;
-    _currentCategorySlug = event.categorySlug;
-    _currentSearch = event.search;
+    if (event.homeTabId != null) _currentHomeTabId = event.homeTabId;
+    if (event.homeTabUuId != null) _currentHomeTabUuId = event.homeTabUuId;
+    if (event.categorySlug != null) _currentCategorySlug = event.categorySlug;
+    if (event.search != null) _currentSearch = event.search;
     _currentLat = event.lat;
     _currentLng = event.lng;
 
@@ -82,12 +82,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
               .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
               .toList();
 
-          // Home Tab flow: Call grocery-products/list-with-variants sending only subcategory uuid, page, limit, lat, lng
+          final bool isAllSelected = targetSubUuid == 'all';
+
+          // Home Tab flow: Call grocery-products/list-with-variants
+          // When 'all' is selected: send homeTabId (and not subCategoryUuId)
+          // When a specific subcategory is selected: send only subCategoryUuId
           final productsResult = await getCategoryProductsUseCase(
             lat: event.lat,
             lng: event.lng,
-            subCategoryUuId: targetSubUuid,
-            homeTabId: null,
+            subCategoryUuId: isAllSelected ? '' : targetSubUuid,
+            homeTabId: isAllSelected ? event.homeTabId : null,
             categorySlug: null,
             search: null,
             page: 1,
@@ -202,12 +206,13 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
                 ? firstSubFromFilters
                 : (event.subCategoryUuId ?? firstSubFromFilters);
 
+            final bool isAllSelected = targetSubUuid == 'all';
             final productsResult = await getCategoryProductsUseCase(
               lat: event.lat,
               lng: event.lng,
-              subCategoryUuId: targetSubUuid,
+              subCategoryUuId: isAllSelected ? '' : targetSubUuid,
               homeTabId: null,
-              categorySlug: null,
+              categorySlug: isAllSelected ? event.categorySlug : null,
               search: null,
               page: 1,
               limit: 100,
@@ -268,13 +273,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
                 ))
             .toList();
 
-        // Category Subcategory flow: Call grocery-products/list-with-variants sending only subcategory uuid, page, limit, lat, lng
+        final bool isAllSelected = targetSubUuid == 'all';
+        // Category Subcategory flow: Call grocery-products/list-with-variants
+        // When 'all' is selected: send categorySlug (and not subCategoryUuId)
+        // When a specific subcategory is selected: send only subCategoryUuId
         final productsResult = await getCategoryProductsUseCase(
           lat: event.lat,
           lng: event.lng,
-          subCategoryUuId: targetSubUuid,
+          subCategoryUuId: isAllSelected ? '' : targetSubUuid,
           homeTabId: null,
-          categorySlug: null,
+          categorySlug: isAllSelected ? effectiveCatSlug : null,
           search: null,
           page: 1,
           limit: 100,
@@ -400,16 +408,12 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
     final String? tagId = tagUuId ?? latestState.selectedTagUuId;
     final String? sort = latestState.selectedSortBy;
 
+    final bool isAllSelected = subId == 'all';
     final bool isHomeTabFlow = _currentHomeTabUuId != null && _currentHomeTabUuId!.isNotEmpty;
 
     // Resolve categorySlug if subCategoriesByCategory is present
     String? effectiveCategorySlug = _currentCategorySlug;
-    int? effectiveHomeTabId = _currentHomeTabId;
-    if (isHomeTabFlow) {
-      // Per user flow: Home Tab only sends subCategoryUuId, page, limit, lat, lng
-      effectiveCategorySlug = null;
-      effectiveHomeTabId = null;
-    } else if (latestState.subCategoriesByCategory != null && latestState.subCategoriesByCategory!.isNotEmpty) {
+    if (latestState.subCategoriesByCategory != null && latestState.subCategoriesByCategory!.isNotEmpty) {
       final matchingSub = latestState.subCategoriesByCategory!.firstWhere(
         (s) => s.uuId == subId || s.subCategoryUuid == subId,
         orElse: () => latestState.subCategoriesByCategory!.first,
@@ -419,12 +423,16 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
       }
     }
 
+    final int? sendHomeTabId = (isHomeTabFlow && isAllSelected) ? _currentHomeTabId : null;
+    final String? sendCategorySlug = (!isHomeTabFlow && isAllSelected) ? effectiveCategorySlug : null;
+    final String sendSubCategoryUuid = isAllSelected ? '' : subId;
+
     final result = await getCategoryProductsUseCase(
       lat: _currentLat!,
       lng: _currentLng!,
-      subCategoryUuId: subId,
-      homeTabId: null,
-      categorySlug: null,
+      subCategoryUuId: sendSubCategoryUuid,
+      homeTabId: sendHomeTabId,
+      categorySlug: sendCategorySlug,
       search: null,
       tagUuId: tagId,
       sortBy: sort,

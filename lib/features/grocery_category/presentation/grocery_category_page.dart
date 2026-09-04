@@ -391,7 +391,7 @@ class _GroceryCategoryPageState extends State<GroceryCategoryPage> {
               create: (context) => getIt<CategoryProductsBloc>()
                 ..add(
                   FetchProductsAndFiltersEvent(
-                    homeTabId: null,
+                    homeTabId: card.id,
                     homeTabUuId: card.uuId,
                     categorySlug: null,
                     subCategoryUuId: null,
