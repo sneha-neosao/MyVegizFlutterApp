@@ -687,6 +687,53 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ],
                       ],
                     ),
+
+                    // Rating Row (below the price)
+                    if (product.rating != null && product.rating!.avgRating > 0) ...[
+                      SizedBox(height: 8.h),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.5.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F8A5F),
+                              borderRadius: BorderRadius.circular(5.w),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  product.rating!.avgRating.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 11.5.sp,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 2.5.w),
+                                Icon(
+                                  Icons.star_rounded,
+                                  size: 13.w,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (product.rating!.totalReviews > 0) ...[
+                            SizedBox(width: 6.w),
+                            Text(
+                              '(${product.rating!.totalReviews} rating${product.rating!.totalReviews > 1 ? 's' : ''})',
+                              style: TextStyle(
+                                fontSize: 11.5.sp,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

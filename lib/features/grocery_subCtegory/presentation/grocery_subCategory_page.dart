@@ -587,6 +587,16 @@ class _HomeTabSubcategoryProductPageState
           centerTitle: false,
           actions: [
             IconButton(
+              icon: Icon(
+                Icons.search_rounded,
+                color: Colors.black87,
+                size: 24.w,
+              ),
+              onPressed: () {
+                context.push(AppRoutePath.search);
+              },
+            ),
+            IconButton(
               icon: Image.asset(
                 'assets/images/heart_icon.png',
                 width: 28.w,
@@ -631,7 +641,7 @@ class _HomeTabSubcategoryProductPageState
                             color: Colors.white,
                             child: Column(
                               children: [
-                                // _buildFilterBar(state),
+                                _buildSortBar(state),
                                 Expanded(child: _buildProductContent(state)),
                               ],
                             ),
@@ -969,103 +979,89 @@ class _HomeTabSubcategoryProductPageState
     );
   }
 
-  Widget _buildFilterBar(CategoryProductsLoaded state) {
-    final filters = state.categoryFiltersResponse.data?.tags ?? [];
-    if (filters.isEmpty) return const SizedBox.shrink();
+  String _sortLabel(String? key) {
+    switch (key) {
+      case 'price_asc':
+        return 'Price: Low to High';
+      case 'price_desc':
+        return 'Price: High to Low';
+      case 'rating_asc':
+        return 'Rating: Low to High';
+      case 'rating_desc':
+        return 'Rating: High to Low';
+      default:
+        return 'Sort';
+    }
+  }
 
-    final activeFilter = state.selectedTagUuId;
+  Widget _buildSortBar(CategoryProductsLoaded state) {
+    final activeSort = state.selectedSortBy;
+    final bool isSorted = activeSort != null && activeSort.isNotEmpty;
 
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
-      ),
+      padding: EdgeInsets.fromLTRB(8.w, 8.h, 10.w, 4.h),
+      color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => _showSortOptionsBottomSheet(context, state),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Sort',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 14,
-                        color: Colors.grey.shade700,
-                      ),
-                    ],
-                  ),
+          GestureDetector(
+            onTap: () => _showSortOptionsBottomSheet(context, state),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: isSorted ? const Color(0xFFEAF7EE) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16.w),
+                border: Border.all(
+                  color: isSorted ? const Color(0xFF028A58) : const Color(0xFFE2E8F0),
+                  width: 1.0,
                 ),
               ),
-            ],
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(left: 8),
               child: Row(
-                children: filters.map((filter) {
-                  final isSelected = activeFilter == filter.key;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () {
-                        context.read<CategoryProductsBloc>().add(
-                          FilterTagChangedEvent(filter.key),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFFFC8019)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? const Color(0xFFFC8019)
-                                : Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Text(
-                          filter.label ?? '',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                      ),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.sort_rounded,
+                    size: 15.w,
+                    color: isSorted ? const Color(0xFF028A58) : const Color(0xFF475569),
+                  ),
+                  SizedBox(width: 4.w),
+                  Text(
+                    _sortLabel(activeSort),
+                    style: TextStyle(
+                      fontSize: 11.5.sp,
+                      fontWeight: isSorted ? FontWeight.w700 : FontWeight.w600,
+                      color: isSorted ? const Color(0xFF028A58) : const Color(0xFF334155),
                     ),
-                  );
-                }).toList(),
+                  ),
+                  SizedBox(width: 3.w),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 15.w,
+                    color: isSorted ? const Color(0xFF028A58) : const Color(0xFF64748B),
+                  ),
+                ],
               ),
             ),
           ),
+          if (isSorted)
+            GestureDetector(
+              onTap: () {
+                context.read<CategoryProductsBloc>().add(
+                  FilterSortChangedEvent(null),
+                );
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                child: Text(
+                  'Clear',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red.shade600,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1172,6 +1168,35 @@ class _HomeTabSubcategoryProductPageState
       products = products
           .where((p) => !_isGroceryProductVeg(p.productName ?? ''))
           .toList();
+    }
+
+    final activeSort = state.selectedSortBy;
+    if (activeSort != null && activeSort.isNotEmpty) {
+      if (activeSort == 'price_asc') {
+        products.sort((a, b) {
+          final pA = a.variants?.firstOrNull?.sellingPrice ?? 0.0;
+          final pB = b.variants?.firstOrNull?.sellingPrice ?? 0.0;
+          return pA.compareTo(pB);
+        });
+      } else if (activeSort == 'price_desc') {
+        products.sort((a, b) {
+          final pA = a.variants?.firstOrNull?.sellingPrice ?? 0.0;
+          final pB = b.variants?.firstOrNull?.sellingPrice ?? 0.0;
+          return pB.compareTo(pA);
+        });
+      } else if (activeSort == 'rating_asc') {
+        products.sort((a, b) {
+          final rA = a.rating?.avgRating ?? 0.0;
+          final rB = b.rating?.avgRating ?? 0.0;
+          return rA.compareTo(rB);
+        });
+      } else if (activeSort == 'rating_desc') {
+        products.sort((a, b) {
+          final rA = a.rating?.avgRating ?? 0.0;
+          final rB = b.rating?.avgRating ?? 0.0;
+          return rB.compareTo(rA);
+        });
+      }
     }
 
     if (products.isEmpty) {
@@ -1291,113 +1316,135 @@ class _HomeTabSubcategoryProductPageState
     BuildContext context,
     CategoryProductsLoaded state,
   ) {
-    final sorts = state.categoryFiltersResponse.data?.sortOptions ?? [];
-    if (sorts.isEmpty) return;
-
     final activeSort = state.selectedSortBy;
-    final cartBloc = context.read<CartBloc>();
+    final parentContext = context;
+
+    final sortOptions = [
+      {'key': 'price_asc', 'label': 'Price Low To High'},
+      {'key': 'price_desc', 'label': 'Price High To low'},
+      {'key': 'rating_asc', 'label': 'Rating Low To High'},
+      {'key': 'rating_desc', 'label': 'Rating high To Low'},
+    ];
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) {
-        return BlocProvider.value(
-          value: cartBloc,
-          child: BlocBuilder<CartBloc, CartState>(
-            builder: (context, cartState) {
-              CartData? cart;
-              if (cartState is CartLoaded) {
-                cart = cartState.cartData;
-              } else if (cartState is CartActionSuccess && cartState.cartData != null) {
-                cart = cartState.cartData;
-              } else if (cartState is CartLoading && cartState.cartData != null) {
-                cart = cartState.cartData;
-              } else if (cartState is CartError && cartState.cartData != null) {
-                cart = cartState.cartData;
-              }
-
-              final hasCartItems = cart != null &&
-                  ((cart.items != null && cart.items!.isNotEmpty) ||
-                      (cart.totalItems ?? 0) > 0);
-
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Sort by',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+      builder: (bottomSheetContext) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Sort by',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E242B),
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (activeSort != null)
+                        TextButton(
+                          onPressed: () {
+                            parentContext.read<CategoryProductsBloc>().add(
+                              FilterSortChangedEvent(null),
+                            );
+                            Navigator.pop(bottomSheetContext);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            'Clear',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red.shade600,
+                            ),
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.pop(context),
+                      SizedBox(width: 4.w),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(bottomSheetContext),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              Divider(height: 1, color: Colors.grey.shade200),
+              SizedBox(height: 6.h),
+              ...sortOptions.map((opt) {
+                final key = opt['key']!;
+                final label = opt['label']!;
+                final isSelected = activeSort == key;
+
+                return InkWell(
+                  onTap: () {
+                    parentContext.read<CategoryProductsBloc>().add(
+                      FilterSortChangedEvent(isSelected ? null : key),
+                    );
+                    Navigator.pop(bottomSheetContext);
+                  },
+                  borderRadius: BorderRadius.circular(10.w),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 4.w),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 20.w,
+                          height: 20.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF028A58)
+                                  : const Color(0xFFCBD5E1),
+                              width: isSelected ? 6.w : 1.5.w,
+                            ),
+                            color: isSelected ? Colors.white : Colors.transparent,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFF028A58)
+                                  : const Color(0xFF1E242B),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Column(
-                      children: sorts.map((sort) {
-                        final isSelected = activeSort == sort.key;
-                        return InkWell(
-                          onTap: () {
-                            this.context.read<CategoryProductsBloc>().add(
-                                  FilterSortChangedEvent(sort.key),
-                                );
-                            Navigator.pop(context);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  sort.label ?? '',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.w500,
-                                    color: isSelected
-                                        ? const Color(0xFFFC8019)
-                                        : Colors.black87,
-                                  ),
-                                ),
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: Color(0xFFFC8019),
-                                    size: 20,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    if (hasCartItems) ...[
-                      const SizedBox(height: 16),
-                      FloatingViewCartBar(
-                        margin: EdgeInsets.zero,
-                        onTap: () {
-                          Navigator.pop(context);
-                          this.context.push(AppRoutePath.cart, extra: false);
-                        },
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            },
+                  ),
+                );
+              }),
+            ],
           ),
         );
       },

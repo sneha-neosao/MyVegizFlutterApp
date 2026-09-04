@@ -17,7 +17,7 @@ import '../../../core/utils/network_images.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../routes/app_route_path.dart';
-import '../../grocery_subCtegory/data/models/homePage_model.dart';
+import 'package:my_vegiz_flutter/features/grocery_subCtegory/data/models/homePage_model.dart';
 
 class GroceryProductCard extends StatefulWidget {
   final String image;

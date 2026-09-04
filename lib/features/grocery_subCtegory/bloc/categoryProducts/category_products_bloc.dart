@@ -368,17 +368,15 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
   void _onFilterSortChanged(
     FilterSortChangedEvent event,
     Emitter<CategoryProductsState> emit,
-  ) async {
+  ) {
     final currentState = state;
     if (currentState is CategoryProductsLoaded) {
       final newSortBy = event.sortBy;
       emit(currentState.copyWith(
         selectedSortBy: newSortBy,
         clearSortBy: newSortBy == null,
-        isProductsLoading: true,
+        isProductsLoading: false,
       ));
-
-      await _fetchProductsOnly(emit, currentState, sortBy: newSortBy);
     }
   }
 
