@@ -7,15 +7,59 @@ import './profile_event.dart';
 import './profile_state.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
+  final GetProfileUseCase getProfileUseCase;
   final UpdateProfileUseCase updateProfileUseCase;
   final DeleteAccountUseCase deleteAccountUseCase;
 
   ProfileBloc({
+    required this.getProfileUseCase,
     required this.updateProfileUseCase,
     required this.deleteAccountUseCase,
   }) : super(ProfileInitial()) {
+    on<GetProfileEvent>(_onGetProfile);
     on<UpdateProfileEvent>(_onUpdateProfile);
     on<DeleteAccountEvent>(_onDeleteAccount);
+  }
+
+  Future<void> _onGetProfile(
+    GetProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    logger.i('👤 ProfileBloc: Fetching profile...');
+    emit(ProfileLoading());
+
+    final result = await getProfileUseCase();
+
+    await result.fold(
+      (failure) {
+        logger.e('👤 ProfileBloc GetProfile error: ${failure.message}');
+        emit(ProfileError(failure.message));
+      },
+      (response) async {
+        logger.i('👤 ProfileBloc: Profile response status=${response.status}, message="${response.message}"');
+
+        final profile = response.data;
+        if (profile != null) {
+          logger.i('👤 ProfileBloc: Profile data found for "${profile.name}"');
+
+          // Sync locally in SecureStorage
+          if (profile.name.isNotEmpty) await SecureStorage.saveCustomerName(profile.name);
+          if (profile.email.isNotEmpty) await SecureStorage.saveCustomerEmail(profile.email);
+          if (profile.contact.isNotEmpty) await SecureStorage.saveCustomerContact(profile.contact);
+
+          if (profile.profileImage != null && profile.profileImage!.isNotEmpty) {
+            profileImageNotifier.value = profile.profileImage;
+            await SecureStorage.saveCustomerProfileImage(profile.profileImage!);
+          }
+        }
+
+        emit(ProfileLoaded(
+          status: response.status,
+          message: response.message,
+          profile: profile,
+        ));
+      },
+    );
   }
 
   Future<void> _onUpdateProfile(

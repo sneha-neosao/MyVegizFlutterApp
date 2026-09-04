@@ -2,6 +2,8 @@ import 'dart:io';
 
 abstract class ProfileEvent {}
 
+class GetProfileEvent extends ProfileEvent {}
+
 class UpdateProfileEvent extends ProfileEvent {
   final String name;
   final String email;

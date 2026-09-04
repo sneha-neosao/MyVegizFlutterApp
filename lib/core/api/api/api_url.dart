@@ -31,6 +31,8 @@ class ApiUrl {
 
   static String regiVerifyOtp = "$baseUrl/web/auth/register/verify-otp";
 
+  static String logout = "$baseUrl/web/auth/logout";
+
   static String mainCategories(int page, int limit) => "$baseUrl/web/main_categories/list?page=$page&limit=$limit";
 
   static String homePage({
@@ -201,6 +203,7 @@ class ApiUrl {
   static String getWishlist = "$baseUrl/web/favourites/list";
 
   // Profile Endpoints
+  static String getProfile = "$baseUrl/web/profile/list";
   static String updateProfile = "$baseUrl/web/profile/update";
   static String deleteAccount = "$baseUrl/web/profile/delete";
 

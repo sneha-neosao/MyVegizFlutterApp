@@ -1,4 +1,35 @@
-/// Model representing the data returned from the Update Profile API.
+/// Response model for GET /web/profile/list
+class ProfileResponse {
+  final int status;
+  final String message;
+  final ProfileModel? data;
+
+  const ProfileResponse({
+    required this.status,
+    required this.message,
+    this.data,
+  });
+
+  factory ProfileResponse.fromJson(Map<String, dynamic> json) {
+    return ProfileResponse(
+      status: json['status'] is int
+          ? json['status']
+          : int.tryParse(json['status']?.toString() ?? '0') ?? 0,
+      message: json['message'] as String? ?? '',
+      data: json['data'] != null && json['data'] is Map<String, dynamic>
+          ? ProfileModel.fromJson(json['data'] as Map<String, dynamic>, message: json['message'] as String?)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'status': status,
+    'message': message,
+    'data': data?.toJson(),
+  };
+}
+
+/// Model representing user profile data.
 class ProfileModel {
   final String name;
   final String email;
@@ -23,4 +54,11 @@ class ProfileModel {
       message: message,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'email': email,
+    'contact': contact,
+    if (profileImage != null) 'profile_image': profileImage,
+  };
 }

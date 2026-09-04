@@ -6,6 +6,9 @@ import '../../../../core/utils/logger.dart';
 import '../models/profile_model.dart';
 
 abstract class ProfileRemoteDataSource {
+  /// GET /web/profile/list
+  Future<ProfileResponse> getProfile();
+
   /// PUT /web/profile/update — multipart (name, email, contact, profile_image)
   Future<ProfileModel> updateProfile({
     required String name,
@@ -22,6 +25,22 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   final ApiHelper apiHelper;
 
   ProfileRemoteDataSourceImpl(this.apiHelper);
+
+  @override
+  Future<ProfileResponse> getProfile() async {
+    try {
+      logger.i('🌐 API CALL → Get Profile (URL: ${ApiUrl.getProfile})');
+      final response = await apiHelper.execute(
+        method: Method.get,
+        url: ApiUrl.getProfile,
+      );
+      logger.i('📡 API RESPONSE Get Profile status: ${response['status']}');
+      return ProfileResponse.fromJson(response);
+    } catch (e) {
+      logger.e('❌ API ERROR → Get Profile: $e');
+      rethrow;
+    }
+  }
 
   @override
   Future<ProfileModel> updateProfile({

@@ -6,6 +6,18 @@ class ProfileInitial extends ProfileState {}
 
 class ProfileLoading extends ProfileState {}
 
+class ProfileLoaded extends ProfileState {
+  final int status;
+  final String message;
+  final ProfileModel? profile;
+
+  ProfileLoaded({
+    required this.status,
+    required this.message,
+    this.profile,
+  });
+}
+
 class ProfileUpdateSuccess extends ProfileState {
   final ProfileModel profile;
   final String message;

@@ -38,6 +38,7 @@ import './app_route_path.dart';
 import '../features/profile/presentation/page/profile_screen.dart';
 import '../features/profile/presentation/page/cms_page_screen.dart';
 import '../features/profile/bloc/cms_page/cms_page_bloc.dart';
+import '../features/profile/bloc/profile_blocs/profile_bloc.dart';
 import '../features/cart/presentation/pages/cart_page.dart';
 import '../features/cart/bloc/cart_bloc.dart';
 import '../features/cart/bloc/food_cart_bloc.dart';
@@ -116,6 +117,9 @@ class AppRoutes {
               ),
               BlocProvider(
                 create: (_) => getIt<VendorHomeSectionBloc>(),
+              ),
+              BlocProvider(
+                create: (_) => getIt<ProfileBloc>(),
               ),
             ],
             child: HomePage(fromCart: fromCart, isFood: isFood),

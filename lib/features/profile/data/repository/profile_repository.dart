@@ -5,6 +5,8 @@ import '../datasources/profile_datasource.dart';
 import '../models/profile_model.dart';
 
 abstract class ProfileRepository {
+  Future<Either<Failure, ProfileResponse>> getProfile();
+
   Future<Either<Failure, ProfileModel>> updateProfile({
     required String name,
     required String email,
@@ -19,6 +21,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDataSource remoteDataSource;
 
   ProfileRepositoryImpl(this.remoteDataSource);
+
+  @override
+  Future<Either<Failure, ProfileResponse>> getProfile() async {
+    try {
+      final result = await remoteDataSource.getProfile();
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, ProfileModel>> updateProfile({

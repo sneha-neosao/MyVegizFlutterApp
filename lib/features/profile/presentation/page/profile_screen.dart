@@ -65,9 +65,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (image != null && image.isNotEmpty) {
       profileImageNotifier.value = image;
-    } else if (name != null && name.isNotEmpty && contact != null && contact.isNotEmpty) {
-      _syncProfileImage(name: name, email: email ?? '', contact: contact);
     }
+
+    _fetchUserProfile();
 
     if (mounted) {
       setState(() {
@@ -80,25 +80,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _syncProfileImage({
-    required String name,
-    required String email,
-    required String contact,
-  }) async {
+  Future<void> _fetchUserProfile() async {
     try {
-      final res = await getIt<UpdateProfileUseCase>()(
-        name: name,
-        email: email,
-        contact: contact,
-      );
-      res.fold((_) {}, (profile) async {
-        if (profile.profileImage != null && profile.profileImage!.isNotEmpty) {
-          profileImageNotifier.value = profile.profileImage;
-          await SecureStorage.saveCustomerProfileImage(profile.profileImage!);
+      final res = await getIt<GetProfileUseCase>()();
+      res.fold((_) {}, (response) async {
+        final profile = response.data;
+        if (profile != null) {
+          if (profile.name.isNotEmpty) await SecureStorage.saveCustomerName(profile.name);
+          if (profile.email.isNotEmpty) await SecureStorage.saveCustomerEmail(profile.email);
+          if (profile.contact.isNotEmpty) await SecureStorage.saveCustomerContact(profile.contact);
+          if (profile.profileImage != null && profile.profileImage!.isNotEmpty) {
+            profileImageNotifier.value = profile.profileImage;
+            await SecureStorage.saveCustomerProfileImage(profile.profileImage!);
+          }
+          if (mounted) {
+            setState(() {
+              _name = profile.name.isNotEmpty ? profile.name : _name;
+              _email = profile.email.isNotEmpty ? profile.email : _email;
+              _contact = profile.contact.isNotEmpty ? profile.contact : _contact;
+            });
+          }
         }
       });
     } catch (e) {
-      logger.d('Profile sync error in ProfileScreen: $e');
+      logger.d('Profile fetch error in ProfileScreen: $e');
     }
   }
 

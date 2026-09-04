@@ -45,6 +45,8 @@ class GroceryProductCard extends StatefulWidget {
   final int? siblingIndex;
   /// Product tags to display at top-left corner of the image
   final List<ProductTagModel>? tags;
+  /// If true, allows horizontal swiping between multiple product images. Defaults to false to ensure smooth scrolling in parent lists.
+  final bool enableImageSwipe;
 
   const GroceryProductCard({
     super.key,
@@ -69,6 +71,7 @@ class GroceryProductCard extends StatefulWidget {
     this.siblingProducts,
     this.siblingIndex,
     this.tags,
+    this.enableImageSwipe = false,
   });
 
   @override
@@ -123,6 +126,41 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
       list.add(widget.image);
     }
     return list;
+  }
+
+  Widget _buildImageItem(String currentImg) {
+    return Padding(
+      padding: EdgeInsets.all(6.w),
+      child: (currentImg.startsWith('http'))
+          ? Image.network(
+              currentImg,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.white,
+                child: Icon(
+                  Icons.eco_rounded,
+                  color: Colors.green.shade300,
+                  size: 32.w,
+                ),
+              ),
+            )
+          : Image.network(
+              NetworkImages.mapAssetToNetwork(currentImg),
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.white,
+                child: Icon(
+                  Icons.eco_rounded,
+                  color: Colors.green.shade300,
+                  size: 32.w,
+                ),
+              ),
+            ),
+    );
   }
 
   @override
@@ -190,49 +228,19 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                           children: [
                             Positioned.fill(
                               child: imageList.isNotEmpty
-                                  ? PageView.builder(
-                                      controller: _pageController,
-                                      itemCount: imageList.length,
-                                      physics: const ClampingScrollPhysics(),
-                                      onPageChanged: (idx) {
-                                        setState(() => _currentImageIndex = idx);
-                                      },
-                                      itemBuilder: (context, index) {
-                                        final currentImg = imageList[index];
-                                        return Padding(
-                                          padding: EdgeInsets.all(6.w),
-                                          child: (currentImg.startsWith('http'))
-                                              ? Image.network(
-                                                  currentImg,
-                                                  width: double.infinity,
-                                                  height: double.infinity,
-                                                  fit: BoxFit.contain,
-                                                  errorBuilder: (context, error, stackTrace) => Container(
-                                                    color: Colors.white,
-                                                    child: Icon(
-                                                      Icons.eco_rounded,
-                                                      color: Colors.green.shade300,
-                                                      size: 32.w,
-                                                    ),
-                                                  ),
-                                                )
-                                              : Image.network(
-                                                  NetworkImages.mapAssetToNetwork(currentImg),
-                                                  width: double.infinity,
-                                                  height: double.infinity,
-                                                  fit: BoxFit.contain,
-                                                  errorBuilder: (context, error, stackTrace) => Container(
-                                                    color: Colors.white,
-                                                    child: Icon(
-                                                      Icons.eco_rounded,
-                                                      color: Colors.green.shade300,
-                                                      size: 32.w,
-                                                    ),
-                                                  ),
-                                                ),
-                                        );
-                                      },
-                                    )
+                                  ? (widget.enableImageSwipe && imageList.length > 1
+                                      ? PageView.builder(
+                                          controller: _pageController,
+                                          itemCount: imageList.length,
+                                          physics: const ClampingScrollPhysics(),
+                                          onPageChanged: (idx) {
+                                            setState(() => _currentImageIndex = idx);
+                                          },
+                                          itemBuilder: (context, index) {
+                                            return _buildImageItem(imageList[index]);
+                                          },
+                                        )
+                                      : _buildImageItem(imageList.first))
                                   : Container(
                                       color: Colors.white,
                                       child: Icon(
@@ -244,7 +252,7 @@ class _GroceryProductCardState extends State<GroceryProductCard> {
                             ),
 
                             // Indicator Dots at Bottom Left
-                            if (imageList.length > 1)
+                            if (widget.enableImageSwipe && imageList.length > 1)
                               Positioned(
                                 bottom: 6.h,
                                 left: 8.w,

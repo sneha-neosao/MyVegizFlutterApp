@@ -39,7 +39,9 @@ import 'package:my_vegiz_flutter/core/api/api/api_helper.dart';
 import 'package:my_vegiz_flutter/core/api/api/api_url.dart';
 import 'package:my_vegiz_flutter/core/models/app_update_model.dart';
 import 'package:my_vegiz_flutter/config/injector_conf.dart';
-import 'package:my_vegiz_flutter/features/profile/domain/usecase/profile_usecases.dart';
+import 'package:my_vegiz_flutter/features/profile/bloc/profile_blocs/profile_bloc.dart';
+import 'package:my_vegiz_flutter/features/profile/bloc/profile_blocs/profile_event.dart';
+import 'package:my_vegiz_flutter/features/profile/bloc/profile_blocs/profile_state.dart';
 import 'package:my_vegiz_flutter/core/utils/profile_image_notifier.dart';
 import 'package:my_vegiz_flutter/features/address/presentation/widgets/swiggy_location_sheet.dart';
 import '../../../grocery_category/presentation/grocery_category_page.dart';
@@ -74,49 +76,28 @@ class _HomePageState extends State<HomePage> {
   double? _lastFetchedLat;
   double? _lastFetchedLng;
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
 
+    // 👤 Very first call: Fetch user profile (/web/profile/list)
+    _fetchProfile();
+
     _updateFirebaseToken();
     _checkAppUpdate();
-    _syncProfileImageIfEmpty();
 
     _startLocationInitialization();
     _listenLocationService();
   }
 
-  Future<void> _syncProfileImageIfEmpty() async {
+  void _fetchProfile() {
     try {
-      final image = await SecureStorage.getCustomerProfileImage();
-      if (image != null && image.isNotEmpty) {
-        if (profileImageNotifier.value != image) {
-          profileImageNotifier.value = image;
-        }
-        return;
-      }
-
-      final name = await SecureStorage.getCustomerName();
-      final contact = await SecureStorage.getCustomerContact();
-      final email = await SecureStorage.getCustomerEmail();
-
-      if (name != null && name.isNotEmpty && contact != null && contact.isNotEmpty) {
-        final res = await getIt<UpdateProfileUseCase>()(
-          name: name,
-          email: email ?? '',
-          contact: contact,
-        );
-        res.fold((_) {}, (profile) async {
-          if (profile.profileImage != null && profile.profileImage!.isNotEmpty) {
-            profileImageNotifier.value = profile.profileImage;
-            await SecureStorage.saveCustomerProfileImage(profile.profileImage!);
-          }
-        });
-      }
+      logger.i('🏠 HomePage: Very first call → Fetching user profile via ProfileBloc');
+      context.read<ProfileBloc>().add(GetProfileEvent());
     } catch (e) {
-      logger.d('Profile sync error: $e');
+      logger.e('🏠 HomePage: Error dispatching GetProfileEvent: $e');
     }
   }
 
@@ -307,6 +288,177 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  bool _isMaintenanceDialogOpen = false;
+
+  void _showMaintenanceDialog(String message) {
+    if (_isMaintenanceDialogOpen || !mounted) return;
+    _isMaintenanceDialogOpen = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      builder: (dialogContext) {
+        bool isLoggingOut = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return PopScope(
+              canPop: false,
+              child: Dialog(
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 🔴 Maintenance / Construction Icon
+                      Container(
+                        height: 70.w,
+                        width: 70.w,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFC8019).withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.construction_rounded,
+                          color: const Color(0xFFFC8019),
+                          size: 34.w,
+                        ),
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      // Title
+                      Text(
+                        "Maintenance Mode",
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+
+                      SizedBox(height: 10.h),
+
+                      // Subtitle (message from API)
+                      Text(
+                        message.isNotEmpty
+                            ? message
+                            : "We are currently undergoing maintenance. Please check back soon.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13.5.sp,
+                          color: Colors.grey.shade600,
+                          height: 1.4,
+                        ),
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      // 2 Buttons: Exit and Logout
+                      Row(
+                        children: [
+                          // 1. Exit Button
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isLoggingOut
+                                  ? null
+                                  : () {
+                                      SystemNavigator.pop();
+                                      exit(0);
+                                    },
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 13.h),
+                                side: BorderSide(color: Colors.grey.shade300),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: Text(
+                                "Exit",
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(width: 12.w),
+
+                          // 2. Logout Button
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isLoggingOut
+                                  ? null
+                                  : () async {
+                                      setDialogState(() {
+                                        isLoggingOut = true;
+                                      });
+                                      try {
+                                        logger.i('👤 Calling Logout API...');
+                                        await getIt<ApiHelper>().execute(
+                                          method: Method.post,
+                                          url: ApiUrl.logout,
+                                        );
+                                      } catch (e) {
+                                        logger.w('Logout API call notice: $e');
+                                      }
+
+                                      await SecureStorage.clearAll();
+                                      profileImageNotifier.value = null;
+                                      _isMaintenanceDialogOpen = false;
+
+                                      if (context.mounted) {
+                                        context.go(AppRoutePath.login);
+                                      }
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 13.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: isLoggingOut
+                                  ? SizedBox(
+                                      width: 20.w,
+                                      height: 20.w,
+                                      child: const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      "Logout",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -538,26 +690,40 @@ class _HomePageState extends State<HomePage> {
     final isNotServiceable = homePageState is HomePageError &&
         homePageState.message.toLowerCase().contains('area is not serviceable');
 
-    return BlocListener<HomePageBloc, HomePageState>(
-      listener: (context, state) {
-        if (state is HomePageLoaded) {
-          // If area is serviceable, fetch the rest of the home data
-          context.read<MainCategoriesBloc>().add(FetchMainCategories());
-          context.read<EntityCategoryBloc>().add(const FetchEntityCategoriesEvent());
-          context.read<GroceryCategoryBloc>().add(const FetchGroceryCategoriesEvent());
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<HomePageBloc, HomePageState>(
+          listener: (context, state) {
+            if (state is HomePageLoaded) {
+              // If area is serviceable, fetch the rest of the home data
+              context.read<MainCategoriesBloc>().add(FetchMainCategories());
+              context.read<EntityCategoryBloc>().add(const FetchEntityCategoriesEvent());
+              context.read<GroceryCategoryBloc>().add(const FetchGroceryCategoriesEvent());
 
-          // Fetch cart from server so bottom nav badge shows correct count
-          final loc = locationService.locationNotifier.value;
-          final lat = loc?.lat ?? 0.0;
-          final lng = loc?.lng ?? 0.0;
-          // Grocery cart
-          getIt<CartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
-          // Food cart
-          getIt<FoodCartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
-          // Ongoing active orders
-          getIt<GroceryOrderBloc>().add(const FetchTodayActiveOrdersEvent(page: 1, limit: 5));
-        }
-      },
+              // Fetch cart from server so bottom nav badge shows correct count
+              final loc = locationService.locationNotifier.value;
+              final lat = loc?.lat ?? 0.0;
+              final lng = loc?.lng ?? 0.0;
+              // Grocery cart
+              getIt<CartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
+              // Food cart
+              getIt<FoodCartBloc>().add(GetCartListEvent(lat: lat, lng: lng));
+              // Ongoing active orders
+              getIt<GroceryOrderBloc>().add(const FetchTodayActiveOrdersEvent(page: 1, limit: 5));
+            }
+          },
+        ),
+        BlocListener<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state is ProfileLoaded) {
+              logger.i('🏠 ProfileLoaded in HomePage: status=${state.status}, message="${state.message}"');
+              if (state.status == 300) {
+                _showMaintenanceDialog(state.message);
+              }
+            }
+          },
+        ),
+      ],
       child: isNotServiceable
           ? PopScope(
               canPop: false,

@@ -560,11 +560,13 @@ void configureDependencies() {
     () => ProfileRepositoryImpl(getIt()),
   );
 
+  getIt.registerLazySingleton(() => GetProfileUseCase(getIt()));
   getIt.registerLazySingleton(() => UpdateProfileUseCase(getIt()));
   getIt.registerLazySingleton(() => DeleteAccountUseCase(getIt()));
 
   getIt.registerFactory(
     () => ProfileBloc(
+      getProfileUseCase: getIt(),
       updateProfileUseCase: getIt(),
       deleteAccountUseCase: getIt(),
     ),
