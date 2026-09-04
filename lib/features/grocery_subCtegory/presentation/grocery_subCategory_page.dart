@@ -1017,66 +1017,79 @@ class _HomeTabSubcategoryProductPageState
       padding: EdgeInsets.fromLTRB(8.w, 8.h, 10.w, 4.h),
       color: Colors.white,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () => _showSortOptionsBottomSheet(context, state),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-              decoration: BoxDecoration(
-                color: isSorted ? const Color(0xFFEAF7EE) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16.w),
-                border: Border.all(
-                  color: isSorted ? const Color(0xFF028A58) : const Color(0xFFE2E8F0),
-                  width: 1.0,
-                ),
+          Container(
+            decoration: BoxDecoration(
+              color: isSorted ? const Color(0xFFEAF7EE) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16.w),
+              border: Border.all(
+                color: isSorted ? const Color(0xFF028A58) : const Color(0xFFE2E8F0),
+                width: 1.0,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.sort_rounded,
-                    size: 15.w,
-                    color: isSorted ? const Color(0xFF028A58) : const Color(0xFF475569),
-                  ),
-                  SizedBox(width: 4.w),
-                  Text(
-                    _sortLabel(activeSort),
-                    style: TextStyle(
-                      fontSize: 11.5.sp,
-                      fontWeight: isSorted ? FontWeight.w700 : FontWeight.w600,
-                      color: isSorted ? const Color(0xFF028A58) : const Color(0xFF334155),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _showSortOptionsBottomSheet(context, state),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      10.w,
+                      5.h,
+                      isSorted ? 2.w : 6.w,
+                      5.h,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.sort_rounded,
+                          size: 15.w,
+                          color: isSorted ? const Color(0xFF028A58) : const Color(0xFF475569),
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          _sortLabel(activeSort),
+                          style: TextStyle(
+                            fontSize: 11.5.sp,
+                            fontWeight: isSorted ? FontWeight.w700 : FontWeight.w600,
+                            color: isSorted ? const Color(0xFF028A58) : const Color(0xFF334155),
+                          ),
+                        ),
+                        if (!isSorted) ...[
+                          SizedBox(width: 3.w),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 15.w,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  SizedBox(width: 3.w),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 15.w,
-                    color: isSorted ? const Color(0xFF028A58) : const Color(0xFF64748B),
+                ),
+                if (isSorted)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      context.read<CategoryProductsBloc>().add(
+                        FilterSortChangedEvent(null),
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(2.w, 5.h, 8.w, 5.h),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 15.w,
+                        color: const Color(0xFF028A58),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+              ],
             ),
           ),
-          if (isSorted)
-            GestureDetector(
-              onTap: () {
-                context.read<CategoryProductsBloc>().add(
-                  FilterSortChangedEvent(null),
-                );
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                child: Text(
-                  'Clear',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red.shade600,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
