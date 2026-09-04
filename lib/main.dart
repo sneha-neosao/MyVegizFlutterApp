@@ -1,5 +1,3 @@
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import './config/injector_conf.dart';
@@ -56,6 +54,23 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  logger.i('🚀 App: Starting MyViggies...');
+
+  configureDependencies();
+  logger.d('⚙️ App: Dependencies configured via GetIt');
+
+  AppRoutes.initialRoute = AppRoutePath.splash;
+
+  // Run the app immediately so the splash screen video renders instantly
+  runApp(
+    const MyViggiesApp(isLoggedIn: false),
+  );
+
+  // Initialize background services asynchronously without blocking initial UI render
+  _initializeBackgroundServices();
+}
+
+Future<void> _initializeBackgroundServices() async {
   // ✅ Initialize Firebase
   try {
     await Firebase.initializeApp();
@@ -68,31 +83,22 @@ Future<void> main() async {
 
     // ✅ Initialize notification listener
     NoficationService.initNotificationListener();
+
+    if (token != null) {
+      await SecureStorage.saveFirebaseToken(token);
+    }
   } catch (e) {
     print("⚠️ Firebase initialization failed (check google-services.json / DefaultFirebaseOptions): $e");
   }
 
-
-
-  // ✅ Get the FCM token and save to SecureStorage
-  final firebasetoken = await NoficationService.getToken();
-  await SecureStorage.saveFirebaseToken(firebasetoken);
-
   // ✅ Initialize local notifications
   NoficationService.initLocalNotifications();
 
-  logger.i('🚀 App: Starting MyViggies...');
-
-  configureDependencies();
-  logger.d('⚙️ App: Dependencies configured via GetIt');
-
-
-
-  await loadCartFromStorage();
-  logger.d('🛒 App: Local cart loaded — ${globalCart.length} item(s)');
-
-  // Determine persistent isFoodCart state on startup
   try {
+    await loadCartFromStorage();
+    logger.d('🛒 App: Local cart loaded — ${globalCart.length} item(s)');
+
+    // Determine persistent isFoodCart state on startup
     final foodItems = await FoodCartDb.instance.getCartItems();
     if (foodItems.isNotEmpty) {
       toggleFoodCartMode(true);
@@ -104,9 +110,7 @@ Future<void> main() async {
         final items = decoded['data']?['items'] as List?;
         if (items != null && items.isNotEmpty) {
           toggleFoodCartMode(false);
-          logger.i(
-            '🛒 App: Startup cart mode set to GROCERY (local items found)',
-          );
+          logger.i('🛒 App: Startup cart mode set to GROCERY (local items found)');
         }
       }
     }
@@ -114,34 +118,20 @@ Future<void> main() async {
     logger.e('🛒 App: Error determining startup cart mode — $e');
   }
 
-  // Persistent Login Check
-  // final bool isLoggedIn = await SecureStorage.isLoggedIn();
-  // AppRoutes.initialRoute = isLoggedIn ? AppRoutePath.home : AppRoutePath.login;
+  try {
+    final bool isLoggedIn = await SecureStorage.isLoggedIn();
+    logger.i('🔐 App: Login status = $isLoggedIn');
 
-  AppRoutes.initialRoute = AppRoutePath.splash;
+    if (isLoggedIn) {
+      NoficationService.updateTokenOnServer();
+    }
 
-  final bool isLoggedIn = await SecureStorage.isLoggedIn();
-  logger.i(
-    '🔐 App: Login status = $isLoggedIn → initial route = ${AppRoutes.initialRoute}',
-  );
-
-  if (isLoggedIn) {
-    NoficationService.updateTokenOnServer();
+    // Load saved profile image into global notifier
+    await ProfileImageNotifier.load();
+    logger.d('👤 App: Profile image notifier initialized');
+  } catch (e) {
+    logger.e('App: Error in background post-startup tasks — $e');
   }
-
-  // Load saved profile image into global notifier
-  await ProfileImageNotifier.load();
-  logger.d('👤 App: Profile image notifier initialized');
-
-  runApp(
-    MyViggiesApp(isLoggedIn: isLoggedIn),
-  );
-  // runApp(
-  //   DevicePreview(
-  //     enabled: !kReleaseMode,
-  //     builder: (context) => MyViggiesApp(isLoggedIn: isLoggedIn),
-  //   ),
-  // );
 }
 
 class MyViggiesApp extends StatelessWidget {
@@ -168,7 +158,7 @@ class MyViggiesApp extends StatelessWidget {
         ),
         BlocProvider.value(value: getIt<ConnectivityBloc>()),
         BlocProvider.value(
-          value: isLoggedIn!
+          value: (isLoggedIn ?? false)
               ? (getIt<AddressBloc>()..add(FetchAddressList()))
               : getIt<AddressBloc>(),
         ),

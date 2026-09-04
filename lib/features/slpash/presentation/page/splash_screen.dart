@@ -1,12 +1,11 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
 import 'package:my_vegiz_flutter/core/storage/secure_storage.dart';
 import 'package:my_vegiz_flutter/core/utils/location_service.dart';
 import 'package:my_vegiz_flutter/core/services/notification_service.dart';
-import 'package:my_vegiz_flutter/core/utils/responsive_utils.dart';
 import 'package:my_vegiz_flutter/routes/app_route_path.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,31 +15,71 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  VideoPlayerController? _controller;
+  bool _isVideoInitialized = false;
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _startSplashFlow();
   }
 
-  Future<void> _initializeApp() async {
+  Future<void> _startSplashFlow() async {
+    final controller = VideoPlayerController.asset('assets/videos/splash.mp4');
+    _controller = controller;
+
+    Duration splashDuration = const Duration(milliseconds: 3000);
+
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      await locationService.requestPermissionAndFetchLocation();
+      await controller.initialize();
+      controller.setLooping(false);
+      await controller.play();
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+        });
+      }
+      if (controller.value.duration > Duration.zero) {
+        splashDuration = controller.value.duration;
+      }
     } catch (e) {
-      debugPrint("Location Error: $e");
+      debugPrint("Splash video initialization error: $e");
     }
 
-    // Keep splash screen visible for a pleasant duration
-    await Future.delayed(const Duration(milliseconds: 2800));
+    // Step 1: Play the video directly to completion without permission interruptions
+    await Future.delayed(splashDuration);
 
-    final isLoggedIn = await SecureStorage.isLoggedIn();
+    if (!mounted) return;
+
+    // Step 2: Now that splash video ended, request all permissions
+    await _requestPermissions();
+
+    if (!mounted) return;
+
+    // Step 3: Navigate to Home or Login
+    await _navigateToNextScreen();
+  }
+
+  Future<void> _requestPermissions() async {
+    try {
+      await locationService.requestPermissionAndFetchLocation();
+    } catch (e) {
+      debugPrint("Location Permission Error: $e");
+    }
 
     try {
       await NoficationService.requestNotificationPermission();
     } catch (e) {
       debugPrint("Notification Permission Error: $e");
     }
+  }
 
+  Future<void> _navigateToNextScreen() async {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+
+    final isLoggedIn = await SecureStorage.isLoggedIn();
     if (!mounted) return;
 
     if (isLoggedIn) {
@@ -53,73 +92,43 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(const AssetImage('assets/images/splash image.png'), context);
     precacheImage(const AssetImage('assets/images/login_bg.png'), context);
     precacheImage(const AssetImage('assets/images/signup_bg.png'), context);
     precacheImage(const AssetImage('assets/images/bottom_img.png'), context);
   }
 
   @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Fullscreen Splash Background Image
-          Image.asset(
-            'assets/images/splash image.png',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-            gaplessPlayback: true,
-          ),
-
-          // Center Animated Logo
-          /*Center(
-            child: Image.asset(
-              'assets/images/logo.png',
-              width: 270.w,
-              fit: BoxFit.contain,
-            )
-                .animate()
-                .fade(duration: 700.ms, curve: Curves.easeOut)
-                .scale(
-                  begin: const Offset(0.65, 0.65),
-                  end: const Offset(1.0, 1.0),
-                  duration: 800.ms,
-                  curve: Curves.easeOutBack,
-                )
-                .then(delay: 200.ms)
-                .shimmer(
-                  duration: 1400.ms,
-                  color: Colors.white.withValues(alpha: 0.4),
+      backgroundColor: Colors.white,
+      body: SizedBox.expand(
+        child: (_isVideoInitialized &&
+                controller != null &&
+                controller.value.isInitialized)
+            ? FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller.value.size.width > 0
+                      ? controller.value.size.width
+                      : (controller.value.aspectRatio > 0
+                          ? controller.value.aspectRatio
+                          : 16),
+                  height: controller.value.size.height > 0
+                      ? controller.value.size.height
+                      : 9,
+                  child: VideoPlayer(controller),
                 ),
-          ),*/
-
-          // Bottom Circular Progress Indicator
-          Positioned(
-            bottom: 54.h,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SizedBox(
-                width: 28.w,
-                height: 28.w,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2.8,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Color(0xFFFC8019),
-                  ),
-                ),
-              ),
-            )
-                .animate()
-                .fade(delay: 500.ms, duration: 600.ms),
-          ),
-        ],
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
 }
-
-
