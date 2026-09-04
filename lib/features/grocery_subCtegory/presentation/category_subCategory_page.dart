@@ -540,33 +540,61 @@ class CategorySubcategoryProductPage extends StatefulWidget {
 class _CategorySubcategoryProductPageState
     extends State<CategorySubcategoryProductPage> {
   SubCategoryModel? selectedSubCategory;
+  final ScrollController _productsScrollController = ScrollController();
+
+  void _scrollToTop() {
+    if (_productsScrollController.hasClients) {
+      _productsScrollController.jumpTo(0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _productsScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CartBloc, CartState>(
-      listener: (context, state) {
-        if (state is CartActionSuccess) {
-          logger.i('🛒 CategorySubcategoryProductPage: CartActionSuccess detected! Re-fetching product list.');
-          final prodBloc = context.read<CategoryProductsBloc>();
-          final prodState = prodBloc.state;
-          if (prodState is CategoryProductsLoaded) {
-            prodBloc.add(FilterSubCategoryChangedEvent(prodState.selectedSubCategoryUuId));
-          } else if (widget.category.slug != null) {
-            final loc = locationService.locationNotifier.value;
-            prodBloc.add(
-              FetchProductsAndFiltersEvent(
-                homeTabId: null,
-                homeTabUuId: null,
-                categorySlug: widget.category.slug,
-                subCategoryUuId: 'all',
-                lat: loc?.lat ?? 0.0,
-                lng: loc?.lng ?? 0.0,
-                resetFilters: false,
-              ),
-            );
-          }
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CartBloc, CartState>(
+          listener: (context, state) {
+            if (state is CartActionSuccess) {
+              logger.i('🛒 CategorySubcategoryProductPage: CartActionSuccess detected! Re-fetching product list.');
+              final prodBloc = context.read<CategoryProductsBloc>();
+              final prodState = prodBloc.state;
+              if (prodState is CategoryProductsLoaded) {
+                prodBloc.add(FilterSubCategoryChangedEvent(prodState.selectedSubCategoryUuId));
+              } else if (widget.category.slug != null) {
+                final loc = locationService.locationNotifier.value;
+                prodBloc.add(
+                  FetchProductsAndFiltersEvent(
+                    homeTabId: null,
+                    homeTabUuId: null,
+                    categorySlug: widget.category.slug,
+                    subCategoryUuId: 'all',
+                    lat: loc?.lat ?? 0.0,
+                    lng: loc?.lng ?? 0.0,
+                    resetFilters: false,
+                  ),
+                );
+              }
+            }
+          },
+        ),
+        BlocListener<CategoryProductsBloc, CategoryProductsState>(
+          listenWhen: (previous, current) {
+            if (previous is CategoryProductsLoaded && current is CategoryProductsLoaded) {
+              return previous.selectedSubCategoryUuId != current.selectedSubCategoryUuId;
+            }
+            return false;
+          },
+          listener: (context, state) {
+            _scrollToTop();
+          },
+        ),
+      ],
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -877,6 +905,7 @@ class _CategorySubcategoryProductPageState
 
           return InkWell(
             onTap: () {
+              _scrollToTop();
               context.read<CategoryProductsBloc>().add(
                 FilterSubCategoryChangedEvent(sub.key),
               );
@@ -1237,6 +1266,7 @@ class _CategorySubcategoryProductPageState
     }
 
     return GridView.builder(
+      controller: _productsScrollController,
       padding: EdgeInsets.fromLTRB(5.w, 4.h, 5.w, 90.h),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
