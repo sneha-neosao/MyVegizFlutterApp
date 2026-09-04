@@ -1357,39 +1357,11 @@ class _HomeTabSubcategoryProductPageState
                       color: const Color(0xFF1E242B),
                     ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (activeSort != null)
-                        TextButton(
-                          onPressed: () {
-                            parentContext.read<CategoryProductsBloc>().add(
-                              FilterSortChangedEvent(null),
-                            );
-                            Navigator.pop(bottomSheetContext);
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(
-                            'Clear',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red.shade600,
-                            ),
-                          ),
-                        ),
-                      SizedBox(width: 4.w),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.pop(bottomSheetContext),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(bottomSheetContext),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -1404,7 +1376,7 @@ class _HomeTabSubcategoryProductPageState
                 return InkWell(
                   onTap: () {
                     parentContext.read<CategoryProductsBloc>().add(
-                      FilterSortChangedEvent(isSelected ? null : key),
+                      FilterSortChangedEvent(key),
                     );
                     Navigator.pop(bottomSheetContext);
                   },

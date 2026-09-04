@@ -368,15 +368,17 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
   void _onFilterSortChanged(
     FilterSortChangedEvent event,
     Emitter<CategoryProductsState> emit,
-  ) {
+  ) async {
     final currentState = state;
     if (currentState is CategoryProductsLoaded) {
       final newSortBy = event.sortBy;
       emit(currentState.copyWith(
         selectedSortBy: newSortBy,
         clearSortBy: newSortBy == null,
-        isProductsLoading: false,
+        isProductsLoading: true,
       ));
+
+      await _fetchProductsOnly(emit, currentState, sortBy: newSortBy);
     }
   }
 
@@ -391,10 +393,12 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
       return;
     }
 
-    // Determine the parameters to use, defaulting to the current state value if not provided
-    final String subId = subCategoryUuId ?? currentState.selectedSubCategoryUuId ?? '';
-    final String? tagId = tagUuId ?? currentState.selectedTagUuId;
-    final String? sort = sortBy ?? currentState.selectedSortBy;
+    final latestState = state is CategoryProductsLoaded ? (state as CategoryProductsLoaded) : currentState;
+
+    // Determine the parameters to use, defaulting to the latest state value
+    final String subId = subCategoryUuId ?? latestState.selectedSubCategoryUuId ?? '';
+    final String? tagId = tagUuId ?? latestState.selectedTagUuId;
+    final String? sort = latestState.selectedSortBy;
 
     final bool isHomeTabFlow = _currentHomeTabUuId != null && _currentHomeTabUuId!.isNotEmpty;
 
@@ -405,10 +409,10 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
       // Per user flow: Home Tab only sends subCategoryUuId, page, limit, lat, lng
       effectiveCategorySlug = null;
       effectiveHomeTabId = null;
-    } else if (currentState.subCategoriesByCategory != null && currentState.subCategoriesByCategory!.isNotEmpty) {
-      final matchingSub = currentState.subCategoriesByCategory!.firstWhere(
+    } else if (latestState.subCategoriesByCategory != null && latestState.subCategoriesByCategory!.isNotEmpty) {
+      final matchingSub = latestState.subCategoriesByCategory!.firstWhere(
         (s) => s.uuId == subId || s.subCategoryUuid == subId,
-        orElse: () => currentState.subCategoriesByCategory!.first,
+        orElse: () => latestState.subCategoriesByCategory!.first,
       );
       if (matchingSub.categorySlug != null && matchingSub.categorySlug!.isNotEmpty) {
         effectiveCategorySlug = matchingSub.categorySlug;
@@ -422,8 +426,8 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
       homeTabId: null,
       categorySlug: null,
       search: null,
-      tagUuId: null,
-      sortBy: null,
+      tagUuId: tagId,
+      sortBy: sort,
       page: 1,
       limit: 100,
     );
