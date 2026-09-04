@@ -554,13 +554,12 @@ class _HomeTabSubcategoryProductPageState
             prodBloc.add(FilterSubCategoryChangedEvent(prodState.selectedSubCategoryUuId));
           } else {
             final loc = locationService.locationNotifier.value;
-            final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
             prodBloc.add(
               FetchProductsAndFiltersEvent(
                 homeTabId: widget.tabData.id,
                 homeTabUuId: widget.tabData.uuId,
                 categorySlug: null,
-                subCategoryUuId: firstSubUuid,
+                subCategoryUuId: 'all',
                 lat: loc?.lat ?? 0.0,
                 lng: loc?.lng ?? 0.0,
                 resetFilters: false,
@@ -710,13 +709,12 @@ class _HomeTabSubcategoryProductPageState
           ElevatedButton(
             onPressed: () {
               final loc = locationService.locationNotifier.value;
-              final firstSubUuid = selectedSubCategory?.uuId ?? widget.category.subCategories?.firstOrNull?.uuId;
               context.read<CategoryProductsBloc>().add(
                 FetchProductsAndFiltersEvent(
                   homeTabId: widget.tabData.id,
                   homeTabUuId: widget.tabData.uuId,
                   categorySlug: null,
-                  subCategoryUuId: firstSubUuid,
+                  subCategoryUuId: 'all',
                   lat: loc?.lat ?? 0.0,
                   lng: loc?.lng ?? 0.0,
                   resetFilters: true,

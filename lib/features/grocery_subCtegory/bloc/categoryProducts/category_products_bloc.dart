@@ -73,10 +73,9 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
             return;
           }
 
-          final String firstSubKey = subCatsList.isNotEmpty ? subCatsList.first.uuId : '';
           final String targetSubUuid = (event.resetFilters || event.subCategoryUuId == null || event.subCategoryUuId!.isEmpty)
-              ? firstSubKey
-              : (event.subCategoryUuId ?? firstSubKey);
+              ? 'all'
+              : event.subCategoryUuId!;
 
           final filterOptions = subCatsList
               .map((s) => FilterOption(key: s.uuId, label: s.subCategoryName))
@@ -91,7 +90,7 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
             lat: event.lat,
             lng: event.lng,
             subCategoryUuId: isAllSelected ? '' : targetSubUuid,
-            homeTabId: isAllSelected ? event.homeTabId : null,
+            homeTabId: isAllSelected ? (_currentHomeTabId ?? event.homeTabId) : null,
             categorySlug: null,
             search: null,
             page: 1,
@@ -201,10 +200,9 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
             emit(CategoryProductsError(failure.message));
           },
           (filtersData) async {
-            final firstSubFromFilters = filtersData.data?.subCategories?.firstOrNull?.key ?? '';
-            final targetSubUuid = (event.resetFilters || event.subCategoryUuId == null || event.subCategoryUuId!.isEmpty)
-                ? firstSubFromFilters
-                : (event.subCategoryUuId ?? firstSubFromFilters);
+            final String targetSubUuid = (event.resetFilters || event.subCategoryUuId == null || event.subCategoryUuId!.isEmpty)
+                ? 'all'
+                : event.subCategoryUuId!;
 
             final bool isAllSelected = targetSubUuid == 'all';
             final productsResult = await getCategoryProductsUseCase(
@@ -263,8 +261,8 @@ class CategoryProductsBloc extends Bloc<CategoryProductsEvent, CategoryProductsS
         _currentCategorySlug = effectiveCatSlug.isNotEmpty ? effectiveCatSlug : _currentCategorySlug;
 
         final String targetSubUuid = (event.resetFilters || event.subCategoryUuId == null || event.subCategoryUuId!.isEmpty)
-            ? firstSubKey
-            : (event.subCategoryUuId ?? firstSubKey);
+            ? 'all'
+            : event.subCategoryUuId!;
 
         final filterOptions = subCatsList
             .map((s) => FilterOption(
